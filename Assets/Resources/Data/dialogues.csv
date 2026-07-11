@@ -1,2 +1,2 @@
 id,speaker,text,option1,action1,option2,action2,option3,action3
-nurse_main,兔子护士,今天想做什么呢？,查看今日食事务,view_daily_food_tasks,接诊,start_reception,去病房看看,visit_ward
+nurse_main,兔子护士,今天想做什么呢？,查看今日诊所事务,view_daily_food_tasks,接诊,start_reception,去病房看看,visit_ward
