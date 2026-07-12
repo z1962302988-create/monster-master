@@ -1842,6 +1842,30 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1257661089}
     m_Modifications:
+    - target: {fileID: 4750855348794297497, guid: f44554e2c8be547b2930327ba3129381, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4750855348794297497, guid: f44554e2c8be547b2930327ba3129381, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4750855348794297497, guid: f44554e2c8be547b2930327ba3129381, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 294
+      objectReference: {fileID: 0}
+    - target: {fileID: 4750855348794297497, guid: f44554e2c8be547b2930327ba3129381, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 165
+      objectReference: {fileID: 0}
+    - target: {fileID: 4750855348794297497, guid: f44554e2c8be547b2930327ba3129381, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -51
+      objectReference: {fileID: 0}
+    - target: {fileID: 5517580903066009578, guid: f44554e2c8be547b2930327ba3129381, type: 3}
+      propertyPath: buttonPaddingX
+      value: 60
+      objectReference: {fileID: 0}
     - target: {fileID: 5968441649500342883, guid: f44554e2c8be547b2930327ba3129381, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
