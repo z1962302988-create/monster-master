@@ -422,7 +422,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &498789168455314483
 RectTransform:
   m_ObjectHideFlags: 0
@@ -439,7 +439,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -18, y: 18}
+  m_AnchoredPosition: {x: -62.6, y: 33.5}
   m_SizeDelta: {x: 32, y: 33}
   m_Pivot: {x: 1, y: 0}
 --- !u!222 &9115598978455243053
@@ -764,7 +764,9 @@ MonoBehaviour:
   dialogueText: {fileID: 612996443516129991}
   optionsPanel: {fileID: 3873418813271082230}
   optionButtonTemplate: {fileID: 4196808175669061755}
-  secondsPerCharacter: 0.06
+  nextIcon: {fileID: 1713423769313828328}
+  secondsPerCharacter: 0.1
+  blinkInterval: 2
   maxCharsPerLine: 10
   buttonPaddingX: 50
   buttonPaddingY: 16

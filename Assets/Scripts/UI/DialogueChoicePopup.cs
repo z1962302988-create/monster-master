@@ -13,7 +13,9 @@ namespace MonsterMaster.UI
         [SerializeField] private TMP_Text dialogueText;
         [SerializeField] private RectTransform optionsPanel;
         [SerializeField] private Button optionButtonTemplate;
+        [SerializeField] private Image nextIcon;
         [SerializeField, Min(0.01f)] private float secondsPerCharacter = 0.06f;
+        [SerializeField, Min(0.1f)] private float blinkInterval = 2f;
 
         [SerializeField, Min(1)] private int maxCharsPerLine = 10;
         [SerializeField, Min(0f)] private float buttonPaddingX = 24f;
@@ -21,6 +23,10 @@ namespace MonsterMaster.UI
 
         private readonly List<Button> optionButtons = new List<Button>();
         private Coroutine sequence;
+        private Coroutine blink;
+        private bool isRevealing;
+        private bool skipRequested;
+        private int revealReadyFrame = -1;
         public event Action<string> OptionSelected;
 
         public void Show(DialogueConfigTable.Entry entry)
@@ -35,7 +41,33 @@ namespace MonsterMaster.UI
         {
             if (sequence != null) StopCoroutine(sequence);
             sequence = null;
+            StopBlink();
+            isRevealing = false;
+            skipRequested = false;
             gameObject.SetActive(false);
+        }
+
+        public void OnOverlayClick()
+        {
+            TrySkipReveal();
+        }
+
+        private void Update()
+        {
+            if (!isRevealing || Time.frameCount <= revealReadyFrame) return;
+            if (Input.GetMouseButtonDown(0) ||
+                (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
+            {
+                TrySkipReveal();
+            }
+        }
+
+        private void TrySkipReveal()
+        {
+            if (!isRevealing || Time.frameCount <= revealReadyFrame) return;
+            skipRequested = true;
+            dialogueText.maxVisibleCharacters = dialogueText.text.Length;
+            StopBlink();
         }
 
         private IEnumerator Play(DialogueConfigTable.Entry entry)
@@ -46,11 +78,28 @@ namespace MonsterMaster.UI
             optionsPanel.gameObject.SetActive(false);
             BuildOptions(entry);
 
+            skipRequested = false;
+            isRevealing = true;
+            revealReadyFrame = Time.frameCount;
+            StartBlink();
+
             for (int i = 1; i <= entry.Text.Length; i++)
             {
+                if (skipRequested) break;
                 dialogueText.maxVisibleCharacters = i;
-                yield return new WaitForSecondsRealtime(secondsPerCharacter);
+                float waited = 0f;
+                while (waited < secondsPerCharacter)
+                {
+                    if (skipRequested) break;
+                    waited += Time.unscaledDeltaTime;
+                    yield return null;
+                }
             }
+
+            dialogueText.maxVisibleCharacters = entry.Text.Length;
+            isRevealing = false;
+            skipRequested = false;
+            StopBlink();
 
             optionsPanel.gameObject.SetActive(true);
             CanvasGroup group = optionsPanel.GetComponent<CanvasGroup>();
@@ -70,6 +119,43 @@ namespace MonsterMaster.UI
             optionsPanel.anchoredPosition = end;
             group.alpha = 1f;
             sequence = null;
+        }
+
+        private void StartBlink()
+        {
+            StopBlink();
+            if (nextIcon == null) return;
+            nextIcon.gameObject.SetActive(true);
+            blink = StartCoroutine(BlinkNextIcon());
+        }
+
+        private void StopBlink()
+        {
+            if (blink != null)
+            {
+                StopCoroutine(blink);
+                blink = null;
+            }
+
+            if (nextIcon == null) return;
+            Color color = nextIcon.color;
+            color.a = 1f;
+            nextIcon.color = color;
+            nextIcon.gameObject.SetActive(false);
+        }
+
+        private IEnumerator BlinkNextIcon()
+        {
+            Color color = nextIcon.color;
+            while (true)
+            {
+                color.a = 1f;
+                nextIcon.color = color;
+                yield return new WaitForSecondsRealtime(blinkInterval * 0.5f);
+                color.a = 0f;
+                nextIcon.color = color;
+                yield return new WaitForSecondsRealtime(blinkInterval * 0.5f);
+            }
         }
 
         private void BuildOptions(DialogueConfigTable.Entry entry)
