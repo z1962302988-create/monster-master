@@ -1259,6 +1259,7 @@ GameObject:
   - component: {fileID: 1660738431}
   - component: {fileID: 1660738430}
   - component: {fileID: 1660738433}
+  - component: {fileID: 1660738434}
   m_Layer: 5
   m_Name: npc_nurse
   m_TagString: Untagged
@@ -1276,7 +1277,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 2058820902}
   - {fileID: 1286040309}
@@ -1384,6 +1385,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   popup: {fileID: 2099879656}
   dialogueId: nurse_main
+--- !u!114 &1660738434
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1660738428}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7c4e91f2b8d4e6a9f3c1d5e8b0a2c4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetImage: {fileID: 1660738431}
+  eyesOpen: {fileID: 21300000, guid: 6a05fdcb901d5475ca431ddb11704c3f, type: 3}
+  eyesClosed: {fileID: 21300000, guid: 9d2921795bab040e493406c715bde4a9, type: 3}
+  idleAnchoredPosition: {x: -16, y: 0}
+  headwaveEyesOpen: {fileID: 21300000, guid: 9c4eefe40c5b49ac959087739b37bda9, type: 3}
+  headwaveEyesClosed: {fileID: 21300000, guid: df348be60c904aae96fee5908c4f9a60, type: 3}
+  headwaveAnchoredPosition: {x: 20, y: 0}
+  headwaveChance: 0.5
+  headwaveHoldDuration: 0.4
+  previewHeadwave: 0
+  minInterval: 2.5
+  maxInterval: 4.5
+  closedDuration: 0.12
+  doubleBlinkChance: 0.25
 --- !u!1 &1720868330
 GameObject:
   m_ObjectHideFlags: 0
