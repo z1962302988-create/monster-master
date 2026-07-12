@@ -11,4 +11,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/UI/main.unity
     guid: 81dcca474c19c40d09731fba06ac892f
+  - enabled: 1
+    path: Assets/Scenes/UI/ward.unity
+    guid: db2769273ce340f8a7de517586e108e9
   m_configObjects: {}

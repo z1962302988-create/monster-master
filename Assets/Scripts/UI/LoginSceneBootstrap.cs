@@ -28,6 +28,7 @@ namespace MonsterMaster.UI
         private CanvasGroup titleGroup;
         private CanvasGroup startGroup;
         private CanvasGroup settingsGroup;
+        private LoginAnimation loginAnimation;
 
         private void Awake()
         {
@@ -81,6 +82,9 @@ namespace MonsterMaster.UI
                 Transform settings = transform.Find("SettingsButton");
                 if (settings != null) settingsButton = settings.GetComponent<Button>();
             }
+
+            if (loginAnimation == null)
+                loginAnimation = GetComponent<LoginAnimation>();
         }
 
         private void OnStartGame()
@@ -135,6 +139,8 @@ namespace MonsterMaster.UI
                 openImage.gameObject.SetActive(true);
                 SetImageAlpha(openImage, 0f);
 
+                float blurStart = loginAnimation != null ? loginAnimation.GetBackgroundBlur() : 0f;
+
                 elapsed = 0f;
                 while (elapsed < doorOpenDuration)
                 {
@@ -142,10 +148,17 @@ namespace MonsterMaster.UI
                     float linear = Mathf.Clamp01(elapsed / doorOpenDuration);
                     float t = linear * linear * (3f - 2f * linear);
                     SetImageAlpha(openImage, t);
+
+                    // Clear background blur as the door opens.
+                    if (loginAnimation != null)
+                        loginAnimation.SetBackgroundBlur(Mathf.Lerp(blurStart, 0f, t));
+
                     yield return null;
                 }
 
                 SetImageAlpha(openImage, 1f);
+                if (loginAnimation != null)
+                    loginAnimation.SetBackgroundBlur(0f);
                 if (clinicImage != null && openImage.sprite != null)
                     clinicImage.sprite = openImage.sprite;
             }
@@ -153,10 +166,14 @@ namespace MonsterMaster.UI
             {
                 // Last-resort hard swap if overlay could not be created.
                 clinicImage.sprite = clinicOpenSprite;
+                if (loginAnimation != null)
+                    loginAnimation.SetBackgroundBlur(0f);
             }
             else
             {
                 Debug.LogWarning("[Login] Door-open sprites are missing — loading main scene without transition.", this);
+                if (loginAnimation != null)
+                    loginAnimation.SetBackgroundBlur(0f);
             }
 
             if (holdAfterOpen > 0f)

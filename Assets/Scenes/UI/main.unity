@@ -559,6 +559,81 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &310010001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 310010002}
+  - component: {fileID: 310010004}
+  - component: {fileID: 310010003}
+  m_Layer: 5
+  m_Name: bg_wardopen
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &310010002
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 310010001}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1257661089}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 1920, y: 1080}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &310010003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 310010001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 51fa26939b01246dc8d56709347a8cc9, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &310010004
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 310010001}
+  m_CullTransparentMesh: 1
 --- !u!1 &566702741
 GameObject:
   m_ObjectHideFlags: 0
@@ -915,6 +990,7 @@ GameObject:
   - component: {fileID: 1257661092}
   - component: {fileID: 1257661091}
   - component: {fileID: 1257661090}
+  - component: {fileID: 1257661093}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -935,6 +1011,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 13707821}
+  - {fileID: 310010002}
   - {fileID: 1660738429}
   - {fileID: 6876676}
   - {fileID: 2082264380}
@@ -1009,6 +1086,25 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &1257661093
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1257661088}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb67d2a2818349c48a5f6fd057eb91ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dialoguePopup: {fileID: 2099879656}
+  closedBackground: {fileID: 13707822}
+  openBackground: {fileID: 310010003}
+  wardOpenSprite: {fileID: 21300000, guid: 51fa26939b01246dc8d56709347a8cc9, type: 3}
+  doorOpenDuration: 1.2
+  holdAfterOpen: 0.5
+  wardSceneName: ward
 --- !u!1 &1286040308
 GameObject:
   m_ObjectHideFlags: 0
@@ -1353,7 +1449,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6a05fdcb901d5475ca431ddb11704c3f, type: 3}
+  m_Sprite: {fileID: 21300000, guid: bfffff2daa724960a9fc26f6356d50a9, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1385,6 +1481,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   popup: {fileID: 2099879656}
   dialogueId: nurse_main
+  speakerFace: {fileID: 1660738434}
 --- !u!114 &1660738434
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1398,9 +1495,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   targetImage: {fileID: 1660738431}
-  eyesOpen: {fileID: 21300000, guid: 6a05fdcb901d5475ca431ddb11704c3f, type: 3}
+  eyesOpen: {fileID: 21300000, guid: bfffff2daa724960a9fc26f6356d50a9, type: 3}
   eyesClosed: {fileID: 21300000, guid: 9d2921795bab040e493406c715bde4a9, type: 3}
   idleAnchoredPosition: {x: -16, y: 0}
+  mouthOpen: {fileID: 21300000, guid: 6a05fdcb901d5475ca431ddb11704c3f, type: 3}
+  talkSwapInterval: 0.3
   headwaveEyesOpen: {fileID: 21300000, guid: 9c4eefe40c5b49ac959087739b37bda9, type: 3}
   headwaveEyesClosed: {fileID: 21300000, guid: df348be60c904aae96fee5908c4f9a60, type: 3}
   headwaveAnchoredPosition: {x: 20, y: 0}

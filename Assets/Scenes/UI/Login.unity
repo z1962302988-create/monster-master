@@ -458,8 +458,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   titleText: {fileID: 603}
-  charsPerSecond: 4
-  titleStartDelay: 1
+  titleFadeDuration: 2
+  titleStartDelay: 3
+  backgroundImage: {fileID: 503}
+  backgroundBlurMaterial: {fileID: 2100000, guid: a2a6a4c8189c476495a0a3aea0a0a62f, type: 2}
+  maxBlurSize: 4.5
   startButton: {fileID: 700}
   settingsButton: {fileID: 800}
   buttonAppearDelay: 0.8
@@ -607,7 +610,7 @@ MonoBehaviour:
   m_text: "\u602A\u7269\u8BCA\u6240"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 357cfec25eca646baa9c933626ccd5a5, type: 2}
-  m_sharedMaterial: {fileID: -847050824579088483, guid: 357cfec25eca646baa9c933626ccd5a5, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: f6dd83cc22d4437db210b173c7b1d152, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1258,24 +1261,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1332361876}
   m_CullTransparentMesh: 1
---- !u!1 &1332361882
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1332361880}
-  - component: {fileID: 1332361883}
-  - component: {fileID: 1332361881}
-  m_Layer: 5
-  m_Name: ClinicOpen
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
 --- !u!224 &1332361880
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1325,6 +1310,24 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &1332361882
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1332361880}
+  - component: {fileID: 1332361883}
+  - component: {fileID: 1332361881}
+  m_Layer: 5
+  m_Name: ClinicOpen
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!222 &1332361883
 CanvasRenderer:
   m_ObjectHideFlags: 0

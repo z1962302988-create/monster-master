@@ -5,9 +5,7 @@ using UnityEngine.UI;
 namespace MonsterMaster.Characters
 {
     /// <summary>
-    /// Idle face animation: randomly plays a normal blink or a head-tilt blink.
-    /// Each sprite uses its native pixel size.
-    /// Enable "Preview Headwave" in the Inspector (edit mode) to pose the tilt in Scene view.
+    /// Idle face animation: blink / headwave, plus a mouth talk loop driven by dialogue.
     /// </summary>
     [ExecuteAlways]
     [RequireComponent(typeof(Image))]
@@ -18,6 +16,10 @@ namespace MonsterMaster.Characters
         [SerializeField] private Sprite eyesOpen;
         [SerializeField] private Sprite eyesClosed;
         [SerializeField] private Vector2 idleAnchoredPosition = new Vector2(-16f, 0f);
+
+        [Header("Talking")]
+        [SerializeField] private Sprite mouthOpen;
+        [SerializeField, Min(0.02f)] private float talkSwapInterval = 0.14f;
 
         [Header("Headwave (tilt)")]
         [SerializeField] private Sprite headwaveEyesOpen;
@@ -35,7 +37,12 @@ namespace MonsterMaster.Characters
         [SerializeField, Range(0f, 1f)] private float doubleBlinkChance = 0.25f;
 
         private Coroutine blinkLoop;
+        private Coroutine talkLoop;
         private bool lastPreviewHeadwave;
+        private bool isTalking;
+
+        private Sprite MouthClosed => eyesOpen;
+        private Sprite MouthOpenSprite => mouthOpen != null ? mouthOpen : eyesOpen;
 
         private bool CanHeadwave =>
             headwaveEyesOpen != null && headwaveEyesClosed != null;
@@ -61,21 +68,17 @@ namespace MonsterMaster.Characters
                 return;
             }
 
-            ApplyPose(eyesOpen, idleAnchoredPosition);
-            if (blinkLoop != null) StopCoroutine(blinkLoop);
-            blinkLoop = StartCoroutine(IdleLoop());
+            ApplyPose(MouthClosed, idleAnchoredPosition);
+            RestartIdleLoop();
         }
 
         private void OnDisable()
         {
-            if (blinkLoop != null)
-            {
-                StopCoroutine(blinkLoop);
-                blinkLoop = null;
-            }
+            StopTalkInternal(restoreIdle: false);
+            StopIdleLoop();
 
             if (Application.isPlaying)
-                ApplyPose(eyesOpen, idleAnchoredPosition);
+                ApplyPose(MouthClosed, idleAnchoredPosition);
         }
 
         private void OnValidate()
@@ -91,7 +94,6 @@ namespace MonsterMaster.Characters
         {
             if (Application.isPlaying || targetImage == null) return;
 
-            // While previewing, keep saving the dragged Scene position.
             if (previewHeadwave)
             {
                 headwaveAnchoredPosition = targetImage.rectTransform.anchoredPosition;
@@ -106,6 +108,54 @@ namespace MonsterMaster.Characters
             lastPreviewHeadwave = previewHeadwave;
         }
 
+        /// <summary>Start mouth talk loop (call while dialogue text is revealing).</summary>
+        public void StartTalking()
+        {
+            if (!Application.isPlaying || isTalking) return;
+            isTalking = true;
+            StopIdleLoop();
+            ApplyPose(MouthClosed, idleAnchoredPosition);
+
+            if (talkLoop != null) StopCoroutine(talkLoop);
+            talkLoop = StartCoroutine(TalkLoop());
+        }
+
+        /// <summary>Stop mouth talk loop and resume idle blink / headwave.</summary>
+        public void StopTalking()
+        {
+            if (!Application.isPlaying) return;
+            StopTalkInternal(restoreIdle: true);
+            if (isActiveAndEnabled)
+                RestartIdleLoop();
+        }
+
+        private void StopTalkInternal(bool restoreIdle)
+        {
+            isTalking = false;
+            if (talkLoop != null)
+            {
+                StopCoroutine(talkLoop);
+                talkLoop = null;
+            }
+
+            if (restoreIdle)
+                ApplyPose(MouthClosed, idleAnchoredPosition);
+        }
+
+        private void RestartIdleLoop()
+        {
+            StopIdleLoop();
+            if (!isActiveAndEnabled || isTalking) return;
+            blinkLoop = StartCoroutine(IdleLoop());
+        }
+
+        private void StopIdleLoop()
+        {
+            if (blinkLoop == null) return;
+            StopCoroutine(blinkLoop);
+            blinkLoop = null;
+        }
+
         private void ApplyEditorPreview(bool force)
         {
             if (Application.isPlaying || targetImage == null) return;
@@ -113,9 +163,20 @@ namespace MonsterMaster.Characters
             if (previewHeadwave && CanHeadwave)
                 ApplyPose(headwaveEyesOpen, headwaveAnchoredPosition);
             else
-                ApplyPose(eyesOpen, idleAnchoredPosition);
+                ApplyPose(MouthClosed, idleAnchoredPosition);
 
             lastPreviewHeadwave = previewHeadwave;
+        }
+
+        private IEnumerator TalkLoop()
+        {
+            bool open = false;
+            while (isTalking)
+            {
+                open = !open;
+                ApplyPose(open ? MouthOpenSprite : MouthClosed, idleAnchoredPosition);
+                yield return new WaitForSeconds(talkSwapInterval);
+            }
         }
 
         private IEnumerator IdleLoop()
@@ -124,6 +185,7 @@ namespace MonsterMaster.Characters
             {
                 float wait = Random.Range(minInterval, Mathf.Max(minInterval, maxInterval));
                 yield return new WaitForSeconds(wait);
+                if (isTalking) yield break;
 
                 if (CanHeadwave && Random.value < headwaveChance)
                     yield return PlayHeadwave();
@@ -134,12 +196,12 @@ namespace MonsterMaster.Characters
 
         private IEnumerator PlayBlink()
         {
-            yield return BlinkPair(eyesClosed, eyesOpen, idleAnchoredPosition);
+            yield return BlinkPair(eyesClosed, MouthClosed, idleAnchoredPosition);
 
             if (Random.value < doubleBlinkChance)
             {
                 yield return new WaitForSeconds(0.08f);
-                yield return BlinkPair(eyesClosed, eyesOpen, idleAnchoredPosition);
+                yield return BlinkPair(eyesClosed, MouthClosed, idleAnchoredPosition);
             }
         }
 
@@ -147,8 +209,10 @@ namespace MonsterMaster.Characters
         {
             ApplyPose(headwaveEyesOpen, headwaveAnchoredPosition);
             yield return new WaitForSeconds(headwaveHoldDuration);
+            if (isTalking) yield break;
 
             yield return BlinkPair(headwaveEyesClosed, headwaveEyesOpen, headwaveAnchoredPosition);
+            if (isTalking) yield break;
 
             if (Random.value < doubleBlinkChance)
             {
@@ -157,7 +221,8 @@ namespace MonsterMaster.Characters
             }
 
             yield return new WaitForSeconds(headwaveHoldDuration * 0.75f);
-            ApplyPose(eyesOpen, idleAnchoredPosition);
+            if (!isTalking)
+                ApplyPose(MouthClosed, idleAnchoredPosition);
         }
 
         private IEnumerator BlinkPair(Sprite closed, Sprite open, Vector2 anchoredPosition)
@@ -167,7 +232,8 @@ namespace MonsterMaster.Characters
 
             ApplyPose(closed, anchoredPosition);
             yield return new WaitForSeconds(closedDuration);
-            ApplyPose(open, anchoredPosition);
+            if (!isTalking)
+                ApplyPose(open, anchoredPosition);
         }
 
         private void ApplyPose(Sprite sprite, Vector2 anchoredPosition)

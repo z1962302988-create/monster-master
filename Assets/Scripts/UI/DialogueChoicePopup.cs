@@ -28,6 +28,8 @@ namespace MonsterMaster.UI
         private bool skipRequested;
         private int revealReadyFrame = -1;
         public event Action<string> OptionSelected;
+        public event Action DialogueRevealStarted;
+        public event Action DialogueRevealEnded;
 
         public void Show(DialogueConfigTable.Entry entry)
         {
@@ -42,7 +44,11 @@ namespace MonsterMaster.UI
             if (sequence != null) StopCoroutine(sequence);
             sequence = null;
             StopBlink();
-            isRevealing = false;
+            if (isRevealing)
+            {
+                isRevealing = false;
+                DialogueRevealEnded?.Invoke();
+            }
             skipRequested = false;
             gameObject.SetActive(false);
         }
@@ -82,6 +88,7 @@ namespace MonsterMaster.UI
             isRevealing = true;
             revealReadyFrame = Time.frameCount;
             StartBlink();
+            DialogueRevealStarted?.Invoke();
 
             for (int i = 1; i <= entry.Text.Length; i++)
             {
@@ -100,6 +107,7 @@ namespace MonsterMaster.UI
             isRevealing = false;
             skipRequested = false;
             StopBlink();
+            DialogueRevealEnded?.Invoke();
 
             optionsPanel.gameObject.SetActive(true);
             CanvasGroup group = optionsPanel.GetComponent<CanvasGroup>();

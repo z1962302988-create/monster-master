@@ -8,16 +8,21 @@ namespace MonsterMaster.UI
     /// <summary>
     /// Drives the login screen intro animation sequence:
     ///   1. Background and Clinic appear immediately (already visible).
-    ///   2. Title text reveals character-by-character (typewriter effect).
+    ///   2. Title fades in while the background gradually blurs.
     ///   3. After the title is fully shown, the Start and Settings
     ///      buttons fade in smoothly.
     /// </summary>
     public sealed class LoginAnimation : MonoBehaviour
     {
-        [Header("Title Typewriter")]
+        [Header("Title Fade-in")]
         [SerializeField] private TMP_Text titleText;
-        [SerializeField] [Min(1f)] private float charsPerSecond = 18f;
+        [SerializeField] [Min(0.01f)] private float titleFadeDuration = 1.2f;
         [SerializeField] [Min(0f)] private float titleStartDelay = 0.4f;
+
+        [Header("Background Blur")]
+        [SerializeField] private Image backgroundImage;
+        [SerializeField] private Material backgroundBlurMaterial;
+        [SerializeField] [Min(0f)] private float maxBlurSize = 4.5f;
 
         [Header("Button Fade-in")]
         [SerializeField] private GameObject startButton;
@@ -25,15 +30,25 @@ namespace MonsterMaster.UI
         [SerializeField] [Min(0f)] private float buttonAppearDelay = 0.3f;
         [SerializeField] [Min(0.01f)] private float buttonFadeDuration = 0.8f;
 
+        private static readonly int BlurSizeId = Shader.PropertyToID("_BlurSize");
+
+        private CanvasGroup  titleGroup;
         private CanvasGroup  startButtonGroup;
         private CanvasGroup  settingsButtonGroup;
         private Button       startBtn;
         private Button       settingsBtn;
+        private Material     blurMaterialInstance;
 
         private void Start()
         {
             PrepareComponents();
             StartCoroutine(PlayAnimationSequence());
+        }
+
+        private void OnDestroy()
+        {
+            if (blurMaterialInstance != null)
+                Destroy(blurMaterialInstance);
         }
 
         /// <summary>
@@ -42,12 +57,13 @@ namespace MonsterMaster.UI
         /// </summary>
         private void PrepareComponents()
         {
-            // Title: start with no visible characters
             if (titleText != null)
             {
-                titleText.ForceMeshUpdate();
-                titleText.maxVisibleCharacters = 0;
+                titleGroup = titleText.gameObject.GetOrAddComponent<CanvasGroup>();
+                titleGroup.alpha = 0f;
             }
+
+            PrepareBackgroundBlur();
 
             // Start button
             if (startButton != null)
@@ -72,37 +88,75 @@ namespace MonsterMaster.UI
             }
         }
 
+        private void PrepareBackgroundBlur()
+        {
+            if (backgroundImage == null)
+            {
+                Transform background = transform.Find("Background");
+                if (background != null)
+                    backgroundImage = background.GetComponent<Image>();
+            }
+
+            if (backgroundImage == null || backgroundBlurMaterial == null)
+                return;
+
+            blurMaterialInstance = new Material(backgroundBlurMaterial);
+            blurMaterialInstance.SetFloat(BlurSizeId, 0f);
+            backgroundImage.material = blurMaterialInstance;
+        }
+
+        /// <summary>
+        /// Sets background blur amount in the 0–1 range (0 = sharp, 1 = maxBlurSize).
+        /// </summary>
+        public void SetBackgroundBlur(float normalized)
+        {
+            if (blurMaterialInstance == null)
+                return;
+
+            blurMaterialInstance.SetFloat(BlurSizeId, Mathf.Lerp(0f, maxBlurSize, Mathf.Clamp01(normalized)));
+        }
+
+        /// <summary>Current blur amount in the 0–1 range.</summary>
+        public float GetBackgroundBlur()
+        {
+            if (blurMaterialInstance == null)
+                return 0f;
+
+            float size = blurMaterialInstance.GetFloat(BlurSizeId);
+            return maxBlurSize > 0f ? Mathf.Clamp01(size / maxBlurSize) : 0f;
+        }
+
         private IEnumerator PlayAnimationSequence()
         {
             // ---- Phase 1: initial delay (background & clinic are already visible) ----
             yield return new WaitForSeconds(titleStartDelay);
 
-            // ---- Phase 2: title typewriter ----
-            if (titleText != null)
+            // ---- Phase 2: title fade-in + background blur ----
+            float elapsed = 0f;
+            while (elapsed < titleFadeDuration)
             {
-                titleText.ForceMeshUpdate();
-                int totalChars = titleText.textInfo.characterCount;
+                elapsed += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / titleFadeDuration));
 
-                if (totalChars > 0)
-                {
-                    float interval = 1f / charsPerSecond;
+                if (titleGroup != null)
+                    titleGroup.alpha = t;
 
-                    for (int i = 1; i <= totalChars; i++)
-                    {
-                        titleText.maxVisibleCharacters = i;
-                        yield return new WaitForSeconds(interval);
-                    }
-                }
+                SetBackgroundBlur(t);
+                yield return null;
             }
+
+            if (titleGroup != null)
+                titleGroup.alpha = 1f;
+            SetBackgroundBlur(1f);
 
             // ---- Phase 3: brief pause then buttons fade in ----
             yield return new WaitForSeconds(buttonAppearDelay);
 
-            float elapsed = 0f;
-            while (elapsed < buttonFadeDuration)
+            float buttonElapsed = 0f;
+            while (buttonElapsed < buttonFadeDuration)
             {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / buttonFadeDuration);
+                buttonElapsed += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(buttonElapsed / buttonFadeDuration));
 
                 if (startButtonGroup != null) startButtonGroup.alpha = t;
                 if (settingsButtonGroup != null) settingsButtonGroup.alpha = t;
