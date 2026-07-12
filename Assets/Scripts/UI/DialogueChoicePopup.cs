@@ -27,6 +27,11 @@ namespace MonsterMaster.UI
             sequence = StartCoroutine(Play(entry));
         }
 
+        public void OnOverlayClick()
+        {
+            Close();
+        }
+
         public void Close()
         {
             if (sequence != null) StopCoroutine(sequence);
