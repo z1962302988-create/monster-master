@@ -17,7 +17,13 @@ namespace MonsterMaster.BlockPuzzle.Editor
         {
             serializedObject.Update();
             EditorGUILayout.PropertyField(serializedObject.FindProperty("level"));
-            serializedObject.ApplyModifiedProperties();
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.PropertyField(
+                serializedObject.FindProperty("blockVisuals"),
+                new GUIContent("棋盘 UI 替换"),
+                true);
+            if (serializedObject.ApplyModifiedProperties())
+                SceneView.RepaintAll();
 
             BlockPuzzleBootstrap bootstrap = (BlockPuzzleBootstrap)target;
             LevelData level = bootstrap.Level;
@@ -108,6 +114,117 @@ namespace MonsterMaster.BlockPuzzle.Editor
             SceneView.RepaintAll();
         }
 
+        private static void DrawConfiguredSpritePreview(BlockPuzzleBootstrap bootstrap, LevelData level)
+        {
+            if (Event.current == null || Event.current.type != EventType.Repaint) return;
+            BlockVisualConfig visuals = bootstrap.BlockVisuals;
+            if (visuals == null) return;
+
+            Vector3 origin = GetOrigin(bootstrap.transform, level);
+            Handles.BeginGUI();
+
+            if (visuals.boardBackgroundSprite != null)
+            {
+                Rect boardRect = WorldRectToGuiRect(
+                    origin,
+                    new Vector2(level.columns * SceneCellSize, level.rows * SceneCellSize));
+                DrawSprite(visuals.boardBackgroundSprite, boardRect, new Color(1f, 1f, 1f, 0.55f));
+            }
+
+            foreach (Vector2Int obstacle in level.obstacles)
+            {
+                if (visuals.obstacleSprite == null) break;
+                DrawSprite(
+                    visuals.obstacleSprite,
+                    WorldRectToGuiRect(
+                        origin + new Vector3(obstacle.x, obstacle.y),
+                        Vector2.one * SceneCellSize),
+                    Color.white);
+            }
+
+            foreach (BlockData block in level.blocks)
+            {
+                Sprite shapeSprite = visuals.GetShapeSprite(block.color, block.shape);
+                if (shapeSprite != null)
+                {
+                    DrawSprite(
+                        shapeSprite,
+                        WorldRectToGuiRect(
+                            origin + new Vector3(block.position.x, block.position.y),
+                            new Vector2(block.width, block.height) * SceneCellSize),
+                        Color.white);
+                    continue;
+                }
+
+                if (block.shape == BlockShape.Rectangle)
+                {
+                    Sprite rectangleSprite = visuals.GetRectangleSprite(
+                        block.color, block.width, block.height);
+                    if (rectangleSprite != null)
+                    {
+                        DrawSprite(
+                            rectangleSprite,
+                            WorldRectToGuiRect(
+                                origin + new Vector3(block.position.x, block.position.y),
+                                new Vector2(block.width, block.height) * SceneCellSize),
+                            Color.white);
+                    }
+                    continue;
+                }
+
+                Sprite cellSprite = visuals.GetBlockSprite(block.color);
+                if (cellSprite == null) continue;
+                foreach (Vector2Int offset in block.CreateOccupiedOffsets())
+                {
+                    Vector2Int cell = block.position + offset;
+                    DrawSprite(
+                        cellSprite,
+                        WorldRectToGuiRect(
+                            origin + new Vector3(cell.x, cell.y),
+                            Vector2.one * SceneCellSize),
+                        Color.white);
+                }
+            }
+
+            foreach (ExitData exit in level.exits)
+            {
+                Sprite exitSprite = visuals.GetExitSprite(exit);
+                if (exitSprite == null) continue;
+                Vector3 position;
+                Vector2 size;
+                GetExitRectangle(origin, level, exit, out position, out size);
+                Color tint = BlockPuzzlePalette.Get(exit.color);
+                tint.a = 0.82f;
+                DrawSprite(exitSprite, WorldRectToGuiRect(position - (Vector3)size * 0.5f, size), tint);
+            }
+
+            Handles.EndGUI();
+        }
+
+        private static Rect WorldRectToGuiRect(Vector3 bottomLeft, Vector2 size)
+        {
+            Vector2 topLeft = HandleUtility.WorldToGUIPoint(
+                bottomLeft + new Vector3(0f, size.y, 0f));
+            Vector2 bottomRight = HandleUtility.WorldToGUIPoint(
+                bottomLeft + new Vector3(size.x, 0f, 0f));
+            return Rect.MinMaxRect(topLeft.x, topLeft.y, bottomRight.x, bottomRight.y);
+        }
+
+        private static void DrawSprite(Sprite sprite, Rect rect, Color tint)
+        {
+            if (sprite == null || sprite.texture == null) return;
+            Rect textureRect = sprite.textureRect;
+            Rect uv = new Rect(
+                textureRect.x / sprite.texture.width,
+                textureRect.y / sprite.texture.height,
+                textureRect.width / sprite.texture.width,
+                textureRect.height / sprite.texture.height);
+            Color previousColor = GUI.color;
+            GUI.color = tint;
+            GUI.DrawTextureWithTexCoords(rect, sprite.texture, uv, true);
+            GUI.color = previousColor;
+        }
+
         [DrawGizmo(GizmoType.NonSelected | GizmoType.Selected | GizmoType.Active)]
         private static void DrawBoardGizmo(BlockPuzzleBootstrap bootstrap, GizmoType gizmoType)
         {
@@ -145,6 +262,8 @@ namespace MonsterMaster.BlockPuzzle.Editor
 
             foreach (BlockData block in level.blocks)
                 DrawBlock(origin, block);
+
+            DrawConfiguredSpritePreview(bootstrap, level);
         }
 
         private void HandleInput(BlockPuzzleBootstrap bootstrap, LevelData level)
@@ -239,35 +358,56 @@ namespace MonsterMaster.BlockPuzzle.Editor
             color.a = 0.95f;
             Vector3 center;
             Vector2 size;
+            GetExitRectangle(origin, level, exit, out center, out size);
             string arrow;
             switch (exit.edge)
             {
                 case BoardEdge.Left:
-                    center = origin + new Vector3(-0.26f, (exit.startIndex + exit.span * 0.5f) * SceneCellSize);
-                    size = new Vector2(0.22f, exit.span * SceneCellSize);
                     arrow = "←";
                     break;
                 case BoardEdge.Right:
-                    center = origin + new Vector3(level.columns * SceneCellSize + 0.26f,
-                        (exit.startIndex + exit.span * 0.5f) * SceneCellSize);
-                    size = new Vector2(0.22f, exit.span * SceneCellSize);
                     arrow = "→";
                     break;
                 case BoardEdge.Bottom:
-                    center = origin + new Vector3((exit.startIndex + exit.span * 0.5f) * SceneCellSize, -0.26f);
-                    size = new Vector2(exit.span * SceneCellSize, 0.22f);
                     arrow = "↓";
                     break;
                 default:
-                    center = origin + new Vector3((exit.startIndex + exit.span * 0.5f) * SceneCellSize,
-                        level.rows * SceneCellSize + 0.26f);
-                    size = new Vector2(exit.span * SceneCellSize, 0.22f);
                     arrow = "↑";
                     break;
             }
 
             Handles.DrawSolidRectangleWithOutline(GetRectangleVertices(center, size), color, Color.white);
             Handles.Label(center, exit.id + " " + arrow, EditorStyles.whiteBoldLabel);
+        }
+
+        private static void GetExitRectangle(
+            Vector3 origin,
+            LevelData level,
+            ExitData exit,
+            out Vector3 center,
+            out Vector2 size)
+        {
+            switch (exit.edge)
+            {
+                case BoardEdge.Left:
+                    center = origin + new Vector3(-0.26f, (exit.startIndex + exit.span * 0.5f) * SceneCellSize);
+                    size = new Vector2(0.22f, exit.span * SceneCellSize);
+                    break;
+                case BoardEdge.Right:
+                    center = origin + new Vector3(level.columns * SceneCellSize + 0.26f,
+                        (exit.startIndex + exit.span * 0.5f) * SceneCellSize);
+                    size = new Vector2(0.22f, exit.span * SceneCellSize);
+                    break;
+                case BoardEdge.Bottom:
+                    center = origin + new Vector3((exit.startIndex + exit.span * 0.5f) * SceneCellSize, -0.26f);
+                    size = new Vector2(exit.span * SceneCellSize, 0.22f);
+                    break;
+                default:
+                    center = origin + new Vector3((exit.startIndex + exit.span * 0.5f) * SceneCellSize,
+                        level.rows * SceneCellSize + 0.26f);
+                    size = new Vector2(exit.span * SceneCellSize, 0.22f);
+                    break;
+            }
         }
 
         private static Vector3[] GetRectangleVertices(Vector3 center, Vector2 size)

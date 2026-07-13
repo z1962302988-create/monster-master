@@ -14,9 +14,13 @@ namespace MonsterMaster.BlockPuzzle
         private Color baseColor;
         private Coroutine animationRoutine;
         private readonly List<Image> visualImages = new List<Image>();
+        private readonly List<Color> visualBaseColors = new List<Color>();
         private List<Vector2Int> occupiedOffsets;
+        private Text idLabel;
         private Text stateLabel;
+        private Image stateIcon;
         private List<string> allowedExitIds;
+        private BlockVisualConfig visualConfig;
 
         public string Id { get; private set; }
         public BlockColorType ColorType { get; private set; }
@@ -30,7 +34,7 @@ namespace MonsterMaster.BlockPuzzle
         public BoardManager Board { get; private set; }
         public IReadOnlyList<Vector2Int> OccupiedOffsets => occupiedOffsets;
 
-        public void Initialize(BlockData data, BoardManager board)
+        public void Initialize(BlockData data, BoardManager board, BlockVisualConfig visuals = null)
         {
             rectTransform = GetComponent<RectTransform>();
             image = GetComponent<Image>();
@@ -45,6 +49,7 @@ namespace MonsterMaster.BlockPuzzle
             IsLocked = data.isLocked;
             RequiredKeys = data.requiredKeys;
             Board = board;
+            visualConfig = visuals;
             occupiedOffsets = data.CreateOccupiedOffsets();
             allowedExitIds = new List<string>(data.allowedExitIds);
             baseColor = BlockPuzzlePalette.Get(data.color);
@@ -63,17 +68,28 @@ namespace MonsterMaster.BlockPuzzle
         {
             if (shape == BlockShape.Rectangle)
             {
-                image.color = baseColor;
-                image.raycastTarget = true;
-                visualImages.Add(image);
+                StyleBlockCell(image);
                 return;
             }
 
             image.color = Color.clear;
             image.raycastTarget = false;
+            Sprite shapeSprite = visualConfig != null
+                ? visualConfig.GetShapeSprite(ColorType, shape)
+                : null;
+            if (shapeSprite != null)
+            {
+                image.sprite = shapeSprite;
+                image.type = Image.Type.Simple;
+                image.color = Color.white;
+                RegisterVisual(image, Color.white);
+                BuildShapeHitTargets();
+                return;
+            }
+
             foreach (Vector2Int offset in occupiedOffsets)
             {
-                GameObject cell = new GameObject("CrossCell", typeof(RectTransform), typeof(Image));
+                GameObject cell = new GameObject("ShapeCell", typeof(RectTransform), typeof(Image));
                 cell.transform.SetParent(transform, false);
                 RectTransform cellRect = cell.GetComponent<RectTransform>();
                 cellRect.sizeDelta = Vector2.one * Board.GetCellVisualSize();
@@ -81,15 +97,104 @@ namespace MonsterMaster.BlockPuzzle
                     (offset.x + 0.5f - Width * 0.5f) * Board.GetCellStep(),
                     (offset.y + 0.5f - Height * 0.5f) * Board.GetCellStep());
                 Image cellImage = cell.GetComponent<Image>();
-                cellImage.color = baseColor;
-                cellImage.raycastTarget = true;
-                visualImages.Add(cellImage);
+                StyleBlockCell(cellImage);
             }
+        }
+
+        private void BuildShapeHitTargets()
+        {
+            foreach (Vector2Int offset in occupiedOffsets)
+            {
+                GameObject hitObject = new GameObject("ShapeHitTarget", typeof(RectTransform), typeof(Image));
+                hitObject.transform.SetParent(transform, false);
+                RectTransform hitRect = hitObject.GetComponent<RectTransform>();
+                hitRect.sizeDelta = Vector2.one * Board.GetCellVisualSize();
+                hitRect.anchoredPosition = new Vector2(
+                    (offset.x + 0.5f - Width * 0.5f) * Board.GetCellStep(),
+                    (offset.y + 0.5f - Height * 0.5f) * Board.GetCellStep());
+                Image hitImage = hitObject.GetComponent<Image>();
+                hitImage.color = Color.clear;
+                hitImage.raycastTarget = true;
+            }
+        }
+
+        private void StyleBlockCell(Image cellImage)
+        {
+            Sprite cellSprite = null;
+            if (visualConfig != null)
+            {
+                cellSprite = cellImage == image
+                    ? visualConfig.GetRectangleSprite(ColorType, Width, Height)
+                    : visualConfig.GetBlockSprite(ColorType);
+                cellImage.sprite = cellSprite;
+                cellImage.type = cellSprite != null ? Image.Type.Sliced : Image.Type.Simple;
+            }
+            Color normalColor = cellSprite != null ? Color.white : baseColor;
+            cellImage.color = normalColor;
+            cellImage.raycastTarget = true;
+            RegisterVisual(cellImage, normalColor);
+
+            Shadow shadow = cellImage.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0.01f, 0.02f, 0.04f, 0.48f);
+            shadow.effectDistance = new Vector2(0f, -6f);
+            shadow.useGraphicAlpha = true;
+
+            Outline outline = cellImage.gameObject.AddComponent<Outline>();
+            outline.effectColor = Color.Lerp(baseColor, Color.black, 0.42f);
+            outline.effectDistance = new Vector2(3f, -3f);
+            outline.useGraphicAlpha = true;
+
+            GameObject glossObject = new GameObject("Gloss", typeof(RectTransform), typeof(Image));
+            glossObject.transform.SetParent(cellImage.transform, false);
+            RectTransform glossRect = glossObject.GetComponent<RectTransform>();
+            glossRect.anchorMin = new Vector2(0.10f, 0.62f);
+            glossRect.anchorMax = new Vector2(0.90f, 0.88f);
+            glossRect.offsetMin = Vector2.zero;
+            glossRect.offsetMax = Vector2.zero;
+            Image gloss = glossObject.GetComponent<Image>();
+            gloss.color = new Color(1f, 1f, 1f, 0.16f);
+            gloss.raycastTarget = false;
+        }
+
+        private void RegisterVisual(Image visual, Color normalColor)
+        {
+            visualImages.Add(visual);
+            visualBaseColors.Add(normalColor);
         }
 
         private void CreateStateLabel()
         {
+            GameObject idObject = new GameObject("IdLabel", typeof(RectTransform), typeof(Text));
+            idObject.transform.SetParent(transform, false);
+            RectTransform idRect = idObject.GetComponent<RectTransform>();
+            idRect.anchorMin = new Vector2(0f, 1f);
+            idRect.anchorMax = new Vector2(0f, 1f);
+            idRect.pivot = new Vector2(0f, 1f);
+            idRect.anchoredPosition = new Vector2(10f, -8f);
+            idRect.sizeDelta = new Vector2(Mathf.Max(70f, rectTransform.sizeDelta.x - 20f), 30f);
+            idLabel = idObject.GetComponent<Text>();
+            idLabel.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            idLabel.text = Id;
+            idLabel.fontSize = 20;
+            idLabel.fontStyle = FontStyle.Bold;
+            idLabel.alignment = TextAnchor.UpperLeft;
+            idLabel.color = new Color(1f, 1f, 1f, 0.90f);
+            idLabel.raycastTarget = false;
+
             if (!IsKey && !IsLocked) return;
+
+            Sprite iconSprite = IsLocked ? visualConfig?.lockIcon : visualConfig?.keyIcon;
+            if (iconSprite != null)
+            {
+                GameObject iconObject = new GameObject("StateIcon", typeof(RectTransform), typeof(Image));
+                iconObject.transform.SetParent(transform, false);
+                RectTransform iconRect = iconObject.GetComponent<RectTransform>();
+                iconRect.sizeDelta = Vector2.one * Mathf.Min(48f, Board.GetCellVisualSize() * 0.48f);
+                stateIcon = iconObject.GetComponent<Image>();
+                stateIcon.sprite = iconSprite;
+                stateIcon.preserveAspect = true;
+                stateIcon.raycastTarget = false;
+            }
 
             GameObject labelObject = new GameObject("StateLabel", typeof(RectTransform), typeof(Text));
             labelObject.transform.SetParent(transform, false);
@@ -97,7 +202,8 @@ namespace MonsterMaster.BlockPuzzle
             labelRect.sizeDelta = rectTransform.sizeDelta;
             stateLabel = labelObject.GetComponent<Text>();
             stateLabel.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            stateLabel.fontSize = 24;
+            stateLabel.fontSize = 22;
+            stateLabel.fontStyle = FontStyle.Bold;
             stateLabel.alignment = TextAnchor.MiddleCenter;
             stateLabel.color = Color.white;
             stateLabel.raycastTarget = false;
@@ -125,9 +231,9 @@ namespace MonsterMaster.BlockPuzzle
         {
             if (stateLabel == null) return;
             if (IsLocked)
-                stateLabel.text = "锁\n" + keyCount + "/" + RequiredKeys;
+                stateLabel.text = stateIcon != null ? keyCount + "/" + RequiredKeys : "LOCK\n" + keyCount + "/" + RequiredKeys;
             else if (IsKey)
-                stateLabel.text = "钥匙";
+                stateLabel.text = stateIcon != null ? string.Empty : "KEY";
             else
                 stateLabel.text = string.Empty;
         }
@@ -148,9 +254,9 @@ namespace MonsterMaster.BlockPuzzle
 
         public void SetValidityVisual(bool valid)
         {
-            Color color = valid ? baseColor : new Color(1f, 0.18f, 0.18f, 0.58f);
-            foreach (Image visualImage in visualImages)
-                visualImage.color = color;
+            Color invalidColor = new Color(1f, 0.18f, 0.18f, 0.58f);
+            for (int i = 0; i < visualImages.Count; i++)
+                visualImages[i].color = valid ? visualBaseColors[i] : invalidColor;
         }
 
         public void SetLocalPosition(Vector2 localPosition)

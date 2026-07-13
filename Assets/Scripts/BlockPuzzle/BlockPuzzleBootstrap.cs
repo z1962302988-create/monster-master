@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -8,10 +9,14 @@ namespace MonsterMaster.BlockPuzzle
     public sealed class BlockPuzzleBootstrap : MonoBehaviour
     {
         [SerializeField] private LevelData level;
+        [SerializeField] private BlockVisualConfig blockVisuals = new BlockVisualConfig();
+        [SerializeField] private bool popupMode;
         private GameObject runtimeRoot;
         private Font font;
 
         public LevelData Level => level;
+        public BlockVisualConfig BlockVisuals => blockVisuals;
+        public event Action CloseRequested;
 
         private void Awake()
         {
@@ -48,19 +53,38 @@ namespace MonsterMaster.BlockPuzzle
             CreateEventSystem();
             Canvas canvas = CreateCanvas();
             RectTransform canvasRect = canvas.GetComponent<RectTransform>();
-            CreatePanel("Background", canvasRect, Vector2.zero, new Vector2(1080f, 1920f),
-                new Color(0.035f, 0.052f, 0.08f, 1f), false);
+            RectTransform contentRect = canvasRect;
+            if (popupMode)
+            {
+                CreatePanel("ModalShade", canvasRect, Vector2.zero, new Vector2(1080f, 1920f),
+                    new Color(0f, 0f, 0f, 0.68f), true);
+                GameObject popup = CreatePanel("BlockPuzzlePopup", canvasRect, Vector2.zero,
+                    new Vector2(780f, 1580f), new Color(0.035f, 0.052f, 0.08f, 0.98f), true);
+                contentRect = popup.GetComponent<RectTransform>();
+                Button closeButton = CreateButton("CloseButton", contentRect, "×",
+                    new Vector2(335f, 720f), new Vector2(64f, 64f));
+                closeButton.onClick.AddListener(RequestClose);
+            }
+            else
+            {
+                CreatePanel("Background", canvasRect, Vector2.zero, new Vector2(1080f, 1920f),
+                    new Color(0.035f, 0.052f, 0.08f, 1f), false);
+            }
 
-            CreateText("Title", canvasRect, "BLOCK ESCAPE", 56, TextAnchor.MiddleCenter,
-                new Vector2(0f, 790f), new Vector2(680f, 90f), Color.white);
-            Text keyCounter = CreateText("KeyCounter", canvasRect, "钥匙 0/5", 36,
-                TextAnchor.MiddleCenter, new Vector2(0f, 690f), new Vector2(360f, 56f),
+            float titleY = popupMode ? 690f : 790f;
+            float counterY = popupMode ? 610f : 690f;
+            float boardY = popupMode ? 40f : -50f;
+            float buttonY = popupMode ? -660f : -770f;
+            CreateText("Title", contentRect, "BLOCK ESCAPE", 56, TextAnchor.MiddleCenter,
+                new Vector2(0f, titleY), new Vector2(680f, 90f), Color.white);
+            Text keyCounter = CreateText("KeyCounter", contentRect, "钥匙 0/5", 36,
+                TextAnchor.MiddleCenter, new Vector2(0f, counterY), new Vector2(360f, 56f),
                 new Color(1f, 0.86f, 0.37f));
 
-            GameObject boardObject = CreatePanel("Board", canvasRect, new Vector2(0f, -50f),
+            GameObject boardObject = CreatePanel("Board", contentRect, new Vector2(0f, boardY),
                 new Vector2(820f, 1120f), Color.white, false);
             BoardManager board = boardObject.AddComponent<BoardManager>();
-            board.Initialize(level);
+            board.Initialize(level, blockVisuals);
 
             LevelManager levelManager = runtimeRoot.AddComponent<LevelManager>();
             levelManager.Initialize(level, board);
@@ -69,20 +93,28 @@ namespace MonsterMaster.BlockPuzzle
             keyCounter.text = "钥匙 " + levelManager.KeyCount + "/" + levelManager.RequiredKeyCount;
             GameManager gameManager = runtimeRoot.AddComponent<GameManager>();
 
-            Button restartButton = CreateButton("RestartButton", canvasRect, "重新开始",
-                new Vector2(-225f, -770f), new Vector2(360f, 100f));
-            Button pauseButton = CreateButton("PauseButton", canvasRect, "暂停",
-                new Vector2(225f, -770f), new Vector2(360f, 100f));
+            float buttonX = popupMode ? 170f : 225f;
+            Vector2 buttonSize = popupMode ? new Vector2(300f, 90f) : new Vector2(360f, 100f);
+            Button restartButton = CreateButton("RestartButton", contentRect, "重新开始",
+                new Vector2(-buttonX, buttonY), buttonSize);
+            Button pauseButton = CreateButton("PauseButton", contentRect, "暂停",
+                new Vector2(buttonX, buttonY), buttonSize);
             Text pauseButtonText = pauseButton.GetComponentInChildren<Text>();
 
-            GameObject pauseOverlay = CreateOverlay(canvasRect, "PauseOverlay", "已暂停",
+            GameObject pauseOverlay = CreateOverlay(contentRect, "PauseOverlay", "已暂停",
                 new Color(0f, 0f, 0f, 0.55f), false);
-            GameObject victoryPopup = CreateResultPopup(canvasRect, "VictoryPopup", "关卡完成！", gameManager);
+            GameObject victoryPopup = CreateResultPopup(contentRect, "VictoryPopup", "关卡完成！", gameManager);
 
             gameManager.Initialize(board, levelManager, pauseButtonText,
                 pauseOverlay, victoryPopup, RequestRestart);
             restartButton.onClick.AddListener(gameManager.Restart);
             pauseButton.onClick.AddListener(gameManager.TogglePause);
+        }
+
+        private void RequestClose()
+        {
+            Time.timeScale = 1f;
+            CloseRequested?.Invoke();
         }
 
         private Canvas CreateCanvas()
@@ -92,6 +124,7 @@ namespace MonsterMaster.BlockPuzzle
             canvasObject.transform.SetParent(runtimeRoot.transform, false);
             Canvas canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = popupMode ? 100 : 0;
 
             CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;

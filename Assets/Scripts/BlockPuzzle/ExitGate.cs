@@ -8,10 +8,12 @@ namespace MonsterMaster.BlockPuzzle
     {
         public ExitData Data { get; private set; }
 
-        public void Initialize(ExitData data)
+        public void Initialize(ExitData data, BlockVisualConfig visualConfig = null)
         {
             Data = data;
             Image image = GetComponent<Image>();
+            image.sprite = visualConfig != null ? visualConfig.GetExitSprite(data) : null;
+            image.type = image.sprite != null ? Image.Type.Sliced : Image.Type.Simple;
             Color color = BlockPuzzlePalette.Get(data.color);
             color.a = 0.82f;
             image.color = color;
@@ -24,33 +26,33 @@ namespace MonsterMaster.BlockPuzzle
 
             int blockStart;
             int blockEnd;
-            bool fullyOutside;
+            bool reachedExit;
             switch (Data.edge)
             {
                 case BoardEdge.Left:
-                    fullyOutside = position.x + block.Width <= 0;
+                    reachedExit = position.x <= 0;
                     blockStart = position.y;
                     blockEnd = position.y + block.Height;
                     break;
                 case BoardEdge.Right:
-                    fullyOutside = position.x >= columns;
+                    reachedExit = position.x + block.Width >= columns;
                     blockStart = position.y;
                     blockEnd = position.y + block.Height;
                     break;
                 case BoardEdge.Bottom:
-                    fullyOutside = position.y + block.Height <= 0;
+                    reachedExit = position.y <= 0;
                     blockStart = position.x;
                     blockEnd = position.x + block.Width;
                     break;
                 default:
-                    fullyOutside = position.y >= rows;
+                    reachedExit = position.y + block.Height >= rows;
                     blockStart = position.x;
                     blockEnd = position.x + block.Width;
                     break;
             }
 
             int gateEnd = Data.startIndex + Data.span;
-            return fullyOutside && blockStart >= Data.startIndex && blockEnd <= gateEnd;
+            return reachedExit && blockStart >= Data.startIndex && blockEnd <= gateEnd;
         }
     }
 }

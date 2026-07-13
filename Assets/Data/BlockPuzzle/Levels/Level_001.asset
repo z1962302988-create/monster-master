@@ -59,7 +59,7 @@ MonoBehaviour:
     allowedExitIds:
     - E2
   - id: B03
-    color: 9
+    color: 1
     position: {x: 4, y: 6}
     shape: 0
     width: 1

@@ -15,6 +15,7 @@ namespace MonsterMaster.BlockPuzzle
         private RectTransform boardRect;
         private GridCell[,] cells;
         private LevelData level;
+        private BlockVisualConfig visualConfig;
         private float cellSize;
 
         public event Action<BlockController> BlockExited;
@@ -23,15 +24,24 @@ namespace MonsterMaster.BlockPuzzle
         public int Rows => level.rows;
         public IReadOnlyList<BlockController> Blocks => blocks;
 
-        public void Initialize(LevelData levelData, float maximumWidth = 820f, float maximumHeight = 1120f)
+        public void Initialize(
+            LevelData levelData,
+            BlockVisualConfig visualConfig = null,
+            float maximumWidth = 820f,
+            float maximumHeight = 1120f)
         {
             level = levelData;
+            this.visualConfig = visualConfig;
             boardRect = GetComponent<RectTransform>();
             cellSize = DesignCellSize;
             boardRect.sizeDelta = new Vector2(level.columns * cellSize, level.rows * cellSize);
 
             Image background = GetComponent<Image>();
-            background.color = new Color(0.36f, 0.23f, 0.14f, 1f);
+            background.sprite = visualConfig != null ? visualConfig.boardBackgroundSprite : null;
+            background.type = background.sprite != null ? Image.Type.Sliced : Image.Type.Simple;
+            background.color = background.sprite != null
+                ? Color.white
+                : new Color(0.36f, 0.23f, 0.14f, 1f);
             background.raycastTarget = false;
 
             BuildCells();
@@ -65,11 +75,22 @@ namespace MonsterMaster.BlockPuzzle
                     rect.sizeDelta = Vector2.one * (cellSize - CellGap);
                     rect.anchoredPosition = GridToLocal(cell.Position, 1, 1);
                     Image image = visual.GetComponent<Image>();
-                    image.color = cell.IsObstacle
-                        ? new Color(0.22f, 0.15f, 0.10f, 1f)
-                        : new Color(0.43f, 0.29f, 0.19f, 1f);
+                    bool hasObstacleSprite = cell.IsObstacle && visualConfig != null &&
+                                             visualConfig.obstacleSprite != null;
+                    if (hasObstacleSprite)
+                    {
+                        image.sprite = visualConfig.obstacleSprite;
+                        image.type = Image.Type.Simple;
+                        image.color = Color.white;
+                    }
+                    else
+                    {
+                        image.color = cell.IsObstacle
+                            ? new Color(0.22f, 0.15f, 0.10f, 1f)
+                            : new Color(0.43f, 0.29f, 0.19f, 1f);
+                    }
                     image.raycastTarget = false;
-                    if (cell.IsObstacle)
+                    if (cell.IsObstacle && !hasObstacleSprite)
                         AddObstacleMarker(rect);
                 }
             }
@@ -99,7 +120,7 @@ namespace MonsterMaster.BlockPuzzle
             {
                 GameObject gateObject = CreateImageObject("Exit_" + exitData.id, transform);
                 ExitGate gate = gateObject.AddComponent<ExitGate>();
-                gate.Initialize(exitData);
+                gate.Initialize(exitData, visualConfig);
                 PositionExit(gateObject.GetComponent<RectTransform>(), exitData);
                 exits.Add(gate);
             }
@@ -138,7 +159,7 @@ namespace MonsterMaster.BlockPuzzle
                 GameObject blockObject = CreateImageObject("Block_" + data.id, transform);
                 blockObject.AddComponent<CanvasGroup>();
                 BlockController block = blockObject.AddComponent<BlockController>();
-                block.Initialize(data, this);
+                block.Initialize(data, this, visualConfig);
                 blocks.Add(block);
 
                 if (!IsInsideBoard(data.position, data.width, data.height) ||
@@ -287,24 +308,22 @@ namespace MonsterMaster.BlockPuzzle
                 switch (data.edge)
                 {
                     case BoardEdge.Left:
-                        crossesEdge = position.x < 0 && position.x + block.Width > -block.Width;
+                        crossesEdge = position.x < 0;
                         start = position.y;
                         end = position.y + block.Height;
                         break;
                     case BoardEdge.Right:
-                        crossesEdge = position.x + block.Width > level.columns &&
-                                      position.x < level.columns + block.Width;
+                        crossesEdge = position.x + block.Width > level.columns;
                         start = position.y;
                         end = position.y + block.Height;
                         break;
                     case BoardEdge.Bottom:
-                        crossesEdge = position.y < 0 && position.y + block.Height > -block.Height;
+                        crossesEdge = position.y < 0;
                         start = position.x;
                         end = position.x + block.Width;
                         break;
                     default:
-                        crossesEdge = position.y + block.Height > level.rows &&
-                                      position.y < level.rows + block.Height;
+                        crossesEdge = position.y + block.Height > level.rows;
                         start = position.x;
                         end = position.x + block.Width;
                         break;
