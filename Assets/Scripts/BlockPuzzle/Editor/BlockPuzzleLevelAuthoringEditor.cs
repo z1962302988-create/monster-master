@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace MonsterMaster.BlockPuzzle.Editor
 {
@@ -17,6 +18,9 @@ namespace MonsterMaster.BlockPuzzle.Editor
         {
             serializedObject.Update();
             EditorGUILayout.PropertyField(serializedObject.FindProperty("level"));
+            EditorGUILayout.PropertyField(
+                serializedObject.FindProperty("popupLayoutPrefab"),
+                new GUIContent("弹窗布局 Prefab"));
             EditorGUILayout.Space(4f);
             EditorGUILayout.PropertyField(
                 serializedObject.FindProperty("blockVisuals"),
@@ -121,7 +125,21 @@ namespace MonsterMaster.BlockPuzzle.Editor
             if (visuals == null) return;
 
             Vector3 origin = GetOrigin(bootstrap.transform, level);
+            float previewRotation = bootstrap.PopupMode ? bootstrap.PopupRotationDegrees : 0f;
+            Vector3 previewCenterWorld = GetPreviewCenter(bootstrap);
+            float previewScale = GetPreviewScale(bootstrap, level);
             Handles.BeginGUI();
+            Matrix4x4 previousGuiMatrix = GUI.matrix;
+            if (bootstrap.PopupMode)
+            {
+                Vector2 sourceCenter = HandleUtility.WorldToGUIPoint(bootstrap.transform.position);
+                Vector2 targetCenter = HandleUtility.WorldToGUIPoint(previewCenterWorld);
+                Matrix4x4 previewMatrix = Matrix4x4.Translate(targetCenter) *
+                    Matrix4x4.Rotate(Quaternion.Euler(0f, 0f, -bootstrap.PopupRotationDegrees)) *
+                    Matrix4x4.Scale(new Vector3(previewScale, previewScale, 1f)) *
+                    Matrix4x4.Translate(-sourceCenter);
+                GUI.matrix = previousGuiMatrix * previewMatrix;
+            }
 
             if (visuals.boardBackgroundSprite != null)
             {
@@ -134,12 +152,15 @@ namespace MonsterMaster.BlockPuzzle.Editor
             foreach (Vector2Int obstacle in level.obstacles)
             {
                 if (visuals.obstacleSprite == null) break;
-                DrawSprite(
+                DrawUprightSprite(
                     visuals.obstacleSprite,
                     WorldRectToGuiRect(
                         origin + new Vector3(obstacle.x, obstacle.y),
                         Vector2.one * SceneCellSize),
-                    Color.white);
+                    Color.white,
+                    previewRotation,
+                    previewScale,
+                    previousGuiMatrix);
             }
 
             foreach (BlockData block in level.blocks)
@@ -159,15 +180,20 @@ namespace MonsterMaster.BlockPuzzle.Editor
                 if (block.shape == BlockShape.Rectangle)
                 {
                     Sprite rectangleSprite = visuals.GetRectangleSprite(
-                        block.color, block.width, block.height);
+                        block.color,
+                        Mathf.Approximately(previewRotation, 0f) ? block.width : block.height,
+                        Mathf.Approximately(previewRotation, 0f) ? block.height : block.width);
                     if (rectangleSprite != null)
                     {
-                        DrawSprite(
+                        DrawUprightSprite(
                             rectangleSprite,
                             WorldRectToGuiRect(
                                 origin + new Vector3(block.position.x, block.position.y),
                                 new Vector2(block.width, block.height) * SceneCellSize),
-                            Color.white);
+                            Color.white,
+                            previewRotation,
+                            previewScale,
+                            previousGuiMatrix);
                     }
                     continue;
                 }
@@ -177,12 +203,15 @@ namespace MonsterMaster.BlockPuzzle.Editor
                 foreach (Vector2Int offset in block.CreateOccupiedOffsets())
                 {
                     Vector2Int cell = block.position + offset;
-                    DrawSprite(
+                    DrawUprightSprite(
                         cellSprite,
                         WorldRectToGuiRect(
                             origin + new Vector3(cell.x, cell.y),
                             Vector2.one * SceneCellSize),
-                        Color.white);
+                        Color.white,
+                        previewRotation,
+                        previewScale,
+                        previousGuiMatrix);
                 }
             }
 
@@ -198,6 +227,7 @@ namespace MonsterMaster.BlockPuzzle.Editor
                 DrawSprite(exitSprite, WorldRectToGuiRect(position - (Vector3)size * 0.5f, size), tint);
             }
 
+            GUI.matrix = previousGuiMatrix;
             Handles.EndGUI();
         }
 
@@ -213,16 +243,41 @@ namespace MonsterMaster.BlockPuzzle.Editor
         private static void DrawSprite(Sprite sprite, Rect rect, Color tint)
         {
             if (sprite == null || sprite.texture == null) return;
-            Rect textureRect = sprite.textureRect;
-            Rect uv = new Rect(
-                textureRect.x / sprite.texture.width,
-                textureRect.y / sprite.texture.height,
-                textureRect.width / sprite.texture.width,
-                textureRect.height / sprite.texture.height);
             Color previousColor = GUI.color;
             GUI.color = tint;
-            GUI.DrawTextureWithTexCoords(rect, sprite.texture, uv, true);
+            EditorGUI.DrawPreviewTexture(
+                rect,
+                sprite.texture,
+                Graphic.defaultGraphicMaterial,
+                ScaleMode.StretchToFill);
             GUI.color = previousColor;
+        }
+
+        private static void DrawUprightSprite(
+            Sprite sprite,
+            Rect rect,
+            Color tint,
+            float previewRotation,
+            float previewScale,
+            Matrix4x4 baseGuiMatrix)
+        {
+            if (Mathf.Approximately(previewRotation, 0f))
+            {
+                DrawSprite(sprite, rect, tint);
+                return;
+            }
+
+            Matrix4x4 rotatedBoardMatrix = GUI.matrix;
+            Vector3 screenCenter = baseGuiMatrix.inverse.MultiplyPoint3x4(
+                rotatedBoardMatrix.MultiplyPoint3x4(rect.center));
+            GUI.matrix = baseGuiMatrix;
+            Rect uprightRect = new Rect(
+                screenCenter.x - rect.height * previewScale * 0.5f,
+                screenCenter.y - rect.width * previewScale * 0.5f,
+                rect.height * previewScale,
+                rect.width * previewScale);
+            DrawSprite(sprite, uprightRect, tint);
+            GUI.matrix = rotatedBoardMatrix;
         }
 
         [DrawGizmo(GizmoType.NonSelected | GizmoType.Selected | GizmoType.Active)]
@@ -232,6 +287,19 @@ namespace MonsterMaster.BlockPuzzle.Editor
             if (level == null) return;
 
             Vector3 origin = GetOrigin(bootstrap.transform, level);
+            bool usesObstacleSprite = bootstrap.BlockVisuals != null &&
+                                      bootstrap.BlockVisuals.obstacleSprite != null;
+            Matrix4x4 previousHandlesMatrix = Handles.matrix;
+            if (bootstrap.PopupMode)
+            {
+                Vector3 sourceCenter = bootstrap.transform.position;
+                Vector3 targetCenter = GetPreviewCenter(bootstrap);
+                float previewScale = GetPreviewScale(bootstrap, level);
+                Handles.matrix = Matrix4x4.TRS(
+                    targetCenter,
+                    Quaternion.Euler(0f, 0f, bootstrap.PopupRotationDegrees),
+                    Vector3.one * previewScale) * Matrix4x4.Translate(-sourceCenter);
+            }
             Handles.zTest = UnityEngine.Rendering.CompareFunction.Always;
             for (int x = 0; x < level.columns; x++)
             {
@@ -246,12 +314,13 @@ namespace MonsterMaster.BlockPuzzle.Editor
                         GetCellVertices(center),
                         cellColor,
                         new Color(0.52f, 0.38f, 0.25f, 0.8f));
-                    if (obstacle)
+                    if (obstacle && !usesObstacleSprite)
                     {
                         Vector3[] vertices = GetCellVertices(center);
                         Handles.color = Color.white;
-                        Handles.DrawLine(vertices[0], vertices[2], 3f);
-                        Handles.DrawLine(vertices[1], vertices[3], 3f);
+                        float markerThickness = 3f / Mathf.Max(1f, GetPreviewScale(bootstrap, level));
+                        Handles.DrawLine(vertices[0], vertices[2], markerThickness);
+                        Handles.DrawLine(vertices[1], vertices[3], markerThickness);
                         Handles.Label(center, "障碍", EditorStyles.boldLabel);
                     }
                 }
@@ -263,6 +332,7 @@ namespace MonsterMaster.BlockPuzzle.Editor
             foreach (BlockData block in level.blocks)
                 DrawBlock(origin, block);
 
+            Handles.matrix = previousHandlesMatrix;
             DrawConfiguredSpritePreview(bootstrap, level);
         }
 
@@ -272,7 +342,14 @@ namespace MonsterMaster.BlockPuzzle.Editor
             if (current.alt) return;
 
             Vector2Int mouseCell;
-            if (!TryGetMouseCell(bootstrap.transform, level, current.mousePosition, out mouseCell))
+            if (!TryGetMouseCell(
+                    bootstrap.transform,
+                    level,
+                    current.mousePosition,
+                    bootstrap.PopupMode ? bootstrap.PopupRotationDegrees : 0f,
+                    GetPreviewCenter(bootstrap),
+                    GetPreviewScale(bootstrap, level),
+                    out mouseCell))
                 return;
 
             if (current.type == EventType.MouseDown && current.button == 0)
@@ -313,6 +390,21 @@ namespace MonsterMaster.BlockPuzzle.Editor
                 level.columns * SceneCellSize * 0.5f,
                 level.rows * SceneCellSize * 0.5f,
                 0f);
+        }
+
+        private static Vector3 GetPreviewCenter(BlockPuzzleBootstrap bootstrap)
+        {
+            BlockPuzzlePopupLayout layout = bootstrap.PopupLayout;
+            return layout != null && layout.BoardHost != null
+                ? layout.BoardHost.position
+                : bootstrap.transform.position;
+        }
+
+        private static float GetPreviewScale(BlockPuzzleBootstrap bootstrap, LevelData level)
+        {
+            BlockPuzzlePopupLayout layout = bootstrap.PopupLayout;
+            if (layout == null || layout.BoardHost == null || level.columns <= 0) return 1f;
+            return layout.BoardHost.rect.width / (level.columns * SceneCellSize);
         }
 
         private static Vector3 GridToWorld(Vector3 origin, int x, int y)
@@ -426,6 +518,9 @@ namespace MonsterMaster.BlockPuzzle.Editor
             Transform transform,
             LevelData level,
             Vector2 mousePosition,
+            float previewRotation,
+            Vector3 previewCenter,
+            float previewScale,
             out Vector2Int cell)
         {
             Ray ray = HandleUtility.GUIPointToWorldRay(mousePosition);
@@ -437,7 +532,14 @@ namespace MonsterMaster.BlockPuzzle.Editor
                 return false;
             }
 
-            Vector3 local = ray.GetPoint(distance) - GetOrigin(transform, level);
+            Vector3 worldPoint = ray.GetPoint(distance);
+            if (!Mathf.Approximately(previewRotation, 0f))
+            {
+                worldPoint = transform.position +
+                    Quaternion.Euler(0f, 0f, -previewRotation) *
+                    ((worldPoint - previewCenter) / Mathf.Max(0.0001f, previewScale));
+            }
+            Vector3 local = worldPoint - GetOrigin(transform, level);
             cell = new Vector2Int(
                 Mathf.FloorToInt(local.x / SceneCellSize),
                 Mathf.FloorToInt(local.y / SceneCellSize));

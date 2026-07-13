@@ -36,8 +36,8 @@ namespace MonsterMaster.BlockPuzzle
             paused = !paused;
             Time.timeScale = paused ? 0f : 1f;
             board.CanInteract = !paused;
-            pauseOverlay.SetActive(paused);
-            pauseButtonText.text = paused ? "继续" : "暂停";
+            if (pauseOverlay != null) pauseOverlay.SetActive(paused);
+            if (pauseButtonText != null) pauseButtonText.text = paused ? "继续" : "暂停";
         }
 
         public void Restart()

@@ -79,6 +79,8 @@ namespace MonsterMaster.BlockPuzzle
                 : null;
             if (shapeSprite != null)
             {
+                // Irregular silhouettes must rotate with the board so their empty
+                // cells continue to line up with obstacles and occupancy data.
                 image.sprite = shapeSprite;
                 image.type = Image.Type.Simple;
                 image.color = Color.white;
@@ -124,28 +126,33 @@ namespace MonsterMaster.BlockPuzzle
             if (visualConfig != null)
             {
                 cellSprite = cellImage == image
-                    ? visualConfig.GetRectangleSprite(ColorType, Width, Height)
+                    ? visualConfig.GetRectangleSprite(
+                        ColorType,
+                        Mathf.Approximately(Board.VisualCounterRotation, 0f) ? Width : Height,
+                        Mathf.Approximately(Board.VisualCounterRotation, 0f) ? Height : Width)
                     : visualConfig.GetBlockSprite(ColorType);
-                cellImage.sprite = cellSprite;
-                cellImage.type = cellSprite != null ? Image.Type.Sliced : Image.Type.Simple;
             }
             Color normalColor = cellSprite != null ? Color.white : baseColor;
-            cellImage.color = normalColor;
             cellImage.raycastTarget = true;
-            RegisterVisual(cellImage, normalColor);
+            Image styledImage = cellImage;
+            if (cellSprite != null)
+                styledImage = CreateSpriteVisual(cellImage, cellSprite);
+            else
+                cellImage.color = normalColor;
+            RegisterVisual(styledImage, normalColor);
 
-            Shadow shadow = cellImage.gameObject.AddComponent<Shadow>();
+            Shadow shadow = styledImage.gameObject.AddComponent<Shadow>();
             shadow.effectColor = new Color(0.01f, 0.02f, 0.04f, 0.48f);
             shadow.effectDistance = new Vector2(0f, -6f);
             shadow.useGraphicAlpha = true;
 
-            Outline outline = cellImage.gameObject.AddComponent<Outline>();
+            Outline outline = styledImage.gameObject.AddComponent<Outline>();
             outline.effectColor = Color.Lerp(baseColor, Color.black, 0.42f);
             outline.effectDistance = new Vector2(3f, -3f);
             outline.useGraphicAlpha = true;
 
             GameObject glossObject = new GameObject("Gloss", typeof(RectTransform), typeof(Image));
-            glossObject.transform.SetParent(cellImage.transform, false);
+            glossObject.transform.SetParent(styledImage.transform, false);
             RectTransform glossRect = glossObject.GetComponent<RectTransform>();
             glossRect.anchorMin = new Vector2(0.10f, 0.62f);
             glossRect.anchorMax = new Vector2(0.90f, 0.88f);
@@ -156,6 +163,32 @@ namespace MonsterMaster.BlockPuzzle
             gloss.raycastTarget = false;
         }
 
+        private Image CreateSpriteVisual(Image hitImage, Sprite sprite)
+        {
+            if (Mathf.Approximately(Board.VisualCounterRotation, 0f))
+            {
+                hitImage.sprite = sprite;
+                hitImage.type = Image.Type.Sliced;
+                hitImage.color = Color.white;
+                return hitImage;
+            }
+
+            hitImage.sprite = null;
+            hitImage.color = Color.clear;
+            GameObject visualObject = new GameObject("Visual", typeof(RectTransform), typeof(Image));
+            visualObject.transform.SetParent(hitImage.transform, false);
+            RectTransform visualRect = visualObject.GetComponent<RectTransform>();
+            RectTransform hitRect = hitImage.rectTransform;
+            visualRect.sizeDelta = new Vector2(hitRect.sizeDelta.y, hitRect.sizeDelta.x);
+            visualRect.localEulerAngles = new Vector3(0f, 0f, Board.VisualCounterRotation);
+            Image visual = visualObject.GetComponent<Image>();
+            visual.sprite = sprite;
+            visual.type = Image.Type.Simple;
+            visual.color = Color.white;
+            visual.raycastTarget = false;
+            return visual;
+        }
+
         private void RegisterVisual(Image visual, Color normalColor)
         {
             visualImages.Add(visual);
@@ -164,22 +197,26 @@ namespace MonsterMaster.BlockPuzzle
 
         private void CreateStateLabel()
         {
-            GameObject idObject = new GameObject("IdLabel", typeof(RectTransform), typeof(Text));
-            idObject.transform.SetParent(transform, false);
-            RectTransform idRect = idObject.GetComponent<RectTransform>();
-            idRect.anchorMin = new Vector2(0f, 1f);
-            idRect.anchorMax = new Vector2(0f, 1f);
-            idRect.pivot = new Vector2(0f, 1f);
-            idRect.anchoredPosition = new Vector2(10f, -8f);
-            idRect.sizeDelta = new Vector2(Mathf.Max(70f, rectTransform.sizeDelta.x - 20f), 30f);
-            idLabel = idObject.GetComponent<Text>();
-            idLabel.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            idLabel.text = Id;
-            idLabel.fontSize = 20;
-            idLabel.fontStyle = FontStyle.Bold;
-            idLabel.alignment = TextAnchor.UpperLeft;
-            idLabel.color = new Color(1f, 1f, 1f, 0.90f);
-            idLabel.raycastTarget = false;
+            if (Board.ShowBlockLabels)
+            {
+                GameObject idObject = new GameObject("IdLabel", typeof(RectTransform), typeof(Text));
+                idObject.transform.SetParent(transform, false);
+                RectTransform idRect = idObject.GetComponent<RectTransform>();
+                idRect.anchorMin = new Vector2(0f, 1f);
+                idRect.anchorMax = new Vector2(0f, 1f);
+                idRect.pivot = new Vector2(0f, 1f);
+                idRect.anchoredPosition = new Vector2(10f, -8f);
+                idRect.sizeDelta = new Vector2(Mathf.Max(70f, rectTransform.sizeDelta.x - 20f), 30f);
+                idLabel = idObject.GetComponent<Text>();
+                idLabel.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                idLabel.text = Id;
+                idLabel.fontSize = 20;
+                idLabel.fontStyle = FontStyle.Bold;
+                idLabel.alignment = TextAnchor.UpperLeft;
+                idLabel.color = new Color(1f, 1f, 1f, 0.90f);
+                idLabel.raycastTarget = false;
+                CounterRotateUi(idRect);
+            }
 
             if (!IsKey && !IsLocked) return;
 
@@ -194,7 +231,10 @@ namespace MonsterMaster.BlockPuzzle
                 stateIcon.sprite = iconSprite;
                 stateIcon.preserveAspect = true;
                 stateIcon.raycastTarget = false;
+                CounterRotateUi(iconRect);
             }
+
+            if (!Board.ShowBlockLabels) return;
 
             GameObject labelObject = new GameObject("StateLabel", typeof(RectTransform), typeof(Text));
             labelObject.transform.SetParent(transform, false);
@@ -207,6 +247,14 @@ namespace MonsterMaster.BlockPuzzle
             stateLabel.alignment = TextAnchor.MiddleCenter;
             stateLabel.color = Color.white;
             stateLabel.raycastTarget = false;
+            CounterRotateUi(labelRect);
+        }
+
+        private void CounterRotateUi(RectTransform rect)
+        {
+            if (Mathf.Approximately(Board.VisualCounterRotation, 0f)) return;
+            rect.sizeDelta = new Vector2(rect.sizeDelta.y, rect.sizeDelta.x);
+            rect.localEulerAngles = new Vector3(0f, 0f, Board.VisualCounterRotation);
         }
 
         public bool CanExitThrough(string exitId)

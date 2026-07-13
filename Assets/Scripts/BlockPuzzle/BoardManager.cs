@@ -12,10 +12,13 @@ namespace MonsterMaster.BlockPuzzle
         private const float DesignCellSize = 102f;
         private readonly List<BlockController> blocks = new List<BlockController>();
         private readonly List<ExitGate> exits = new List<ExitGate>();
+        private readonly List<RectTransform> obstacleVisuals = new List<RectTransform>();
         private RectTransform boardRect;
         private GridCell[,] cells;
         private LevelData level;
         private BlockVisualConfig visualConfig;
+        private float visualCounterRotation;
+        private bool showBlockLabels;
         private float cellSize;
 
         public event Action<BlockController> BlockExited;
@@ -23,15 +26,21 @@ namespace MonsterMaster.BlockPuzzle
         public int Columns => level.columns;
         public int Rows => level.rows;
         public IReadOnlyList<BlockController> Blocks => blocks;
+        public float VisualCounterRotation => visualCounterRotation;
+        public bool ShowBlockLabels => showBlockLabels;
 
         public void Initialize(
             LevelData levelData,
             BlockVisualConfig visualConfig = null,
+            float contentCounterRotation = 0f,
+            bool showRuntimeBlockLabels = false,
             float maximumWidth = 820f,
             float maximumHeight = 1120f)
         {
             level = levelData;
             this.visualConfig = visualConfig;
+            visualCounterRotation = contentCounterRotation;
+            showBlockLabels = showRuntimeBlockLabels;
             boardRect = GetComponent<RectTransform>();
             cellSize = DesignCellSize;
             boardRect.sizeDelta = new Vector2(level.columns * cellSize, level.rows * cellSize);
@@ -48,6 +57,7 @@ namespace MonsterMaster.BlockPuzzle
             BuildGridVisuals();
             BuildExits();
             BuildBlocks();
+            BringObstaclesToFront();
         }
 
         private void BuildCells()
@@ -79,9 +89,7 @@ namespace MonsterMaster.BlockPuzzle
                                              visualConfig.obstacleSprite != null;
                     if (hasObstacleSprite)
                     {
-                        image.sprite = visualConfig.obstacleSprite;
-                        image.type = Image.Type.Simple;
-                        image.color = Color.white;
+                        CreateCounterRotatedImage(rect, image, visualConfig.obstacleSprite);
                     }
                     else
                     {
@@ -92,11 +100,43 @@ namespace MonsterMaster.BlockPuzzle
                     image.raycastTarget = false;
                     if (cell.IsObstacle && !hasObstacleSprite)
                         AddObstacleMarker(rect);
+                    if (cell.IsObstacle)
+                        obstacleVisuals.Add(rect);
                 }
             }
         }
 
-        private static void AddObstacleMarker(RectTransform parent)
+        private void BringObstaclesToFront()
+        {
+            foreach (RectTransform obstacle in obstacleVisuals)
+            {
+                if (obstacle != null) obstacle.SetAsLastSibling();
+            }
+        }
+
+        private void CreateCounterRotatedImage(RectTransform parent, Image hitImage, Sprite sprite)
+        {
+            if (Mathf.Approximately(visualCounterRotation, 0f))
+            {
+                hitImage.sprite = sprite;
+                hitImage.type = Image.Type.Simple;
+                hitImage.color = Color.white;
+                return;
+            }
+
+            hitImage.color = Color.clear;
+            GameObject visualObject = CreateImageObject("Visual", parent);
+            RectTransform visualRect = visualObject.GetComponent<RectTransform>();
+            visualRect.sizeDelta = new Vector2(parent.sizeDelta.y, parent.sizeDelta.x);
+            visualRect.localEulerAngles = new Vector3(0f, 0f, visualCounterRotation);
+            Image visual = visualObject.GetComponent<Image>();
+            visual.sprite = sprite;
+            visual.type = Image.Type.Simple;
+            visual.color = Color.white;
+            visual.raycastTarget = false;
+        }
+
+        private void AddObstacleMarker(RectTransform parent)
         {
             GameObject marker = new GameObject("ObstacleMarker", typeof(RectTransform), typeof(Text));
             marker.transform.SetParent(parent, false);
@@ -112,6 +152,8 @@ namespace MonsterMaster.BlockPuzzle
             text.alignment = TextAnchor.MiddleCenter;
             text.color = new Color(1f, 1f, 1f, 0.82f);
             text.raycastTarget = false;
+            if (!Mathf.Approximately(visualCounterRotation, 0f))
+                markerRect.localEulerAngles = new Vector3(0f, 0f, visualCounterRotation);
         }
 
         private void BuildExits()
