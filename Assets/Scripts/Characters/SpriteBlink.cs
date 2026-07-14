@@ -120,13 +120,27 @@ namespace MonsterMaster.Characters
             talkLoop = StartCoroutine(TalkLoop());
         }
 
+        /// <summary>Moves the animated portrait while preserving its headwave offset.</summary>
+        public void SetIdleAnchoredPosition(Vector2 position)
+        {
+            Vector2 headwaveOffset = headwaveAnchoredPosition - idleAnchoredPosition;
+            idleAnchoredPosition = position;
+            headwaveAnchoredPosition = position + headwaveOffset;
+            if (!isTalking && targetImage != null)
+                targetImage.rectTransform.anchoredPosition = position;
+        }
+
         /// <summary>Stop mouth talk loop and resume idle blink / headwave.</summary>
         public void StopTalking()
         {
             if (!Application.isPlaying) return;
+            if (!isActiveAndEnabled)
+            {
+                StopTalkInternal(restoreIdle: false);
+                return;
+            }
             StopTalkInternal(restoreIdle: true);
-            if (isActiveAndEnabled)
-                RestartIdleLoop();
+            RestartIdleLoop();
         }
 
         private void StopTalkInternal(bool restoreIdle)

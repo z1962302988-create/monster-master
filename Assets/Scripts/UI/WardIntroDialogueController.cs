@@ -43,7 +43,7 @@ namespace MonsterMaster.UI
 
         private IEnumerator Start()
         {
-            yield return null;
+            yield return new WaitForSecondsRealtime(1f);
             Show(FirstDialogueId);
         }
 
@@ -79,7 +79,7 @@ namespace MonsterMaster.UI
             if (action == CloseDialogueAction)
                 return;
 
-            StartCoroutine(ShowNextFrame(action));
+            Show(action);
         }
 
         private void OnRightWallClicked()
@@ -87,7 +87,7 @@ namespace MonsterMaster.UI
             if (!waitingForRightWall) return;
             waitingForRightWall = false;
             rightWallButton.interactable = false;
-            StartCoroutine(ShowNextFrame("ward_right_001"));
+            Show("ward_right_001");
         }
 
         private void OnPuzzleCompleted()
@@ -95,12 +95,6 @@ namespace MonsterMaster.UI
             if (namePlateButton != null)
                 namePlateButton.interactable = false;
             Show("ward_complete_001");
-        }
-
-        private IEnumerator ShowNextFrame(string dialogueId)
-        {
-            yield return null;
-            Show(dialogueId);
         }
 
         private void Show(string dialogueId)

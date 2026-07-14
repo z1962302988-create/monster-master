@@ -16,22 +16,21 @@ ward_intro_011b,ward_enter,雾雾,我来带路？……我可以试试。,ward_i
 ward_intro_011c,ward_enter,雾雾,好……我不会添麻烦的。,ward_intro_012,,,
 ward_intro_012,ward_enter,雾雾,那面右墙后面就是门牌的位置。如果你愿意的话，可以点一下右边看看。,ward_wait_right_wall,highlight,FullView/RightWall,对白结束后高亮右墙并等待点击
 ward_wait_right_wall,interaction,系统,点击右侧墙面。,ward_right_001,wait_click,FullView/RightWall,玩家点击后切换至 RightView
-ward_right_001,right_view,兔子护士,原来是门牌掉了，字块散得到处都是。,ward_right_002,,,
-ward_right_002,right_view,雾雾,原来是门牌……,ward_right_003,,,
-ward_right_003,right_view,雾雾,上面本来应该写住在这里的人的名字。,ward_right_004,,,
-ward_right_004,right_view,雾雾,不过空着也没关系。反正我的名字……没有那么重要。,ward_right_choice_01,,,
-ward_right_choice_01,right_view,玩家,一起拼回名字。|门牌该写什么？|空着会有人走错。,,choice,,A→ward_right_006a；B→ward_right_006b；C→ward_right_006c
-ward_right_006a,right_view,雾雾,要写……我的名字吗？可是，如果拼错了……,ward_right_007,,,
-ward_right_006b,right_view,雾雾,我可以自己决定吗？那……我想写雾雾。可是，如果拼错了……,ward_right_007,trust_preview,Wuwu,最佳选项；让雾雾主动说出名字
-ward_right_006c,right_view,雾雾,原来是为了这个……那就麻烦你了。可是，如果拼错了……,ward_right_007,,,
-ward_right_007,right_view,玩家,拼错了就再试一次。我会记得。,ward_right_008,,,
+ward_right_001,right_view,兔子护士,原来是门牌，上面盖满了污渍，已经看不清字了。,ward_right_002,,,
+ward_right_002,right_view,雾雾,上面好像写着什么……可是被污渍盖住了。,ward_right_004,,,
+ward_right_004,right_view,雾雾,就这样放着也没关系。反正我的名字……没有那么重要。,ward_right_choice_01,,,
+ward_right_choice_01,right_view,玩家,一起擦干净吧。|下面写着什么？|太脏了，看不清。,,choice,,A→ward_right_006a；B→ward_right_006b；C→ward_right_006c
+ward_right_006a,right_view,雾雾,要擦掉这些污渍吗？可是，如果下面什么也没有呢……,ward_right_007,,,
+ward_right_006b,right_view,雾雾,我也看不清……会是我的名字吗？,ward_right_007,trust_preview,Wuwu,最佳选项；让雾雾对名字产生期待
+ward_right_006c,right_view,雾雾,嗯……就这样放着也没关系。,ward_right_007,,,
+ward_right_007,right_view,我,擦干净就知道了。我会陪你。,ward_right_008,,,
 ward_right_008,right_view,雾雾,那……请你帮帮我。,ward_wait_puzzle,highlight,RightView/NamePlate,对白结束后高亮名字牌
-ward_wait_puzzle,interaction,系统,点击散落的名字牌，拼出“雾雾的房间”。,ward_puzzle_complete,open_block_puzzle,RightView/NamePlate,点击后打开 Block Puzzle；完成前暂停对白
-ward_puzzle_complete,puzzle_complete,兔子护士,拼好了！院长快看，上面写着“雾雾的房间”。,ward_complete_001,replace_nameplate,RightView/NamePlate,仅在拼图成功后触发
+ward_wait_puzzle,interaction,系统,点击名字牌，清除污渍，让下面的字重新显现。,ward_puzzle_complete,open_block_puzzle,RightView/NamePlate,点击后打开当前小游戏；完成前暂停对白
+ward_puzzle_complete,puzzle_complete,兔子护士,擦干净了！院长快看，上面写着“雾雾的房间”。,ward_complete_001,replace_nameplate,RightView/NamePlate,仅在小游戏成功后触发
 ward_complete_001,puzzle_complete,雾雾,这是……我的房间？,ward_complete_002,,,
 ward_complete_002,puzzle_complete,雾雾,不是暂时让我待着的地方？,ward_complete_003,,,
 ward_complete_003,puzzle_complete,雾雾,就算我什么都做不好，名字也可以留在这里吗？,ward_complete_choice_01,,,
-ward_complete_choice_01,puzzle_complete,玩家,因为这里属于你。|你亲自挂上吧。|我们已经拼好了。,,choice,,A→ward_complete_004a；B→ward_complete_004b；C→ward_complete_004c
+ward_complete_choice_01,puzzle_complete,玩家,因为这里属于你。|你亲自擦亮它。|名字已经露出来了。,,choice,,A→ward_complete_004a；B→ward_complete_004b；C→ward_complete_004c
 ward_complete_004a,puzzle_complete,雾雾,原来只要是我，就可以留下名字。,ward_complete_005,grant_bonus_trust,Wuwu,最佳选项；信任值额外 +1
 ward_complete_004b,puzzle_complete,雾雾,我来吗？……好，我想试试。,ward_complete_005,grant_bonus_trust,Wuwu,最佳选项；播放雾雾挂门牌动作；信任值额外 +1
 ward_complete_004c,puzzle_complete,雾雾,嗯……至少现在，它还在这里。,ward_complete_005,,,

@@ -10,17 +10,32 @@ namespace MonsterMaster.UI
 {
     public sealed class DialogueChoicePopup : MonoBehaviour
     {
+        [Serializable]
+        private sealed class PortraitLayout
+        {
+            public int id;
+            public string speaker;
+            public Sprite portrait;
+            public Vector2 anchoredPosition;
+            [Min(0.01f)] public float scale = 1f;
+        }
+
         [SerializeField] private TMP_Text speakerNameText;
         [SerializeField] private TMP_Text dialogueText;
         [SerializeField] private Image portraitImage;
         [SerializeField] private Sprite nursePortrait;
+        [SerializeField] private Sprite wuwuPortrait;
+        [SerializeField] private List<PortraitLayout> portraitLayouts = new List<PortraitLayout>();
         [SerializeField] private bool showPortrait = true;
         [SerializeField] private SpriteBlink portraitAnimator;
         [SerializeField] private RectTransform optionsPanel;
         [SerializeField] private Button optionButtonTemplate;
         [SerializeField] private Image nextIcon;
-        [SerializeField, Min(0.01f)] private float secondsPerCharacter = 0.06f;
+        [SerializeField, Min(0.01f)] private float secondsPerCharacter = 0.14f;
         [SerializeField, Min(0.1f)] private float blinkInterval = 2f;
+        [SerializeField] private DialogueAnimaleseVoice animaleseVoice;
+        [SerializeField, Min(0.04f)] private float characterFadeDuration = 0.2f;
+        [SerializeField, Min(0f)] private float characterRiseDistance = 0f;
 
         [SerializeField, Min(0f)] private float buttonPaddingX = 24f;
         [SerializeField, Min(0f)] private float buttonPaddingY = 16f;
@@ -35,6 +50,19 @@ namespace MonsterMaster.UI
         public event Action<string> OptionSelected;
         public event Action DialogueRevealStarted;
         public event Action DialogueRevealEnded;
+
+        private void Awake()
+        {
+            if (portraitImage != null)
+                portraitImage.gameObject.SetActive(false);
+            if (portraitAnimator != null)
+                portraitAnimator.enabled = false;
+
+            if (animaleseVoice == null)
+                animaleseVoice = GetComponent<DialogueAnimaleseVoice>();
+            if (animaleseVoice == null)
+                animaleseVoice = gameObject.AddComponent<DialogueAnimaleseVoice>();
+        }
 
         public void Show(DialogueConfigTable.Entry entry)
         {
@@ -56,6 +84,8 @@ namespace MonsterMaster.UI
             }
             if (portraitAnimator != null)
                 portraitAnimator.StopTalking();
+            if (animaleseVoice != null)
+                animaleseVoice.Stop();
             skipRequested = false;
             tapAdvanceAction = null;
             gameObject.SetActive(false);
@@ -71,7 +101,7 @@ namespace MonsterMaster.UI
         {
             if (!isRevealing || Time.frameCount <= revealReadyFrame) return;
             skipRequested = true;
-            dialogueText.maxVisibleCharacters = dialogueText.text.Length;
+            ShowCompleteDialogue();
             StopBlink();
         }
 
@@ -85,7 +115,9 @@ namespace MonsterMaster.UI
 
         private IEnumerator Play(DialogueConfigTable.Entry entry)
         {
-            speakerNameText.text = entry.Speaker;
+            speakerNameText.text = entry.Speaker == "玩家" && entry.Options.Count <= 1
+                ? "我"
+                : entry.Speaker;
             UpdatePortrait(entry.Speaker);
             dialogueText.text = entry.Text;
             dialogueText.maxVisibleCharacters = 0;
@@ -99,26 +131,19 @@ namespace MonsterMaster.UI
             if (showPortrait && entry.Speaker == "兔子护士" && portraitAnimator != null)
                 portraitAnimator.StartTalking();
             DialogueRevealStarted?.Invoke();
+            if (animaleseVoice != null)
+                animaleseVoice.BeginLine(entry.Text, entry.Speaker);
 
-            for (int i = 1; i <= entry.Text.Length; i++)
-            {
-                if (skipRequested) break;
-                dialogueText.maxVisibleCharacters = i;
-                float waited = 0f;
-                while (waited < secondsPerCharacter)
-                {
-                    if (skipRequested) break;
-                    waited += Time.unscaledDeltaTime;
-                    yield return null;
-                }
-            }
+            yield return RevealDialogue(entry.Text);
 
-            dialogueText.maxVisibleCharacters = entry.Text.Length;
+            ShowCompleteDialogue();
             isRevealing = false;
             skipRequested = false;
             StopBlink();
             if (portraitAnimator != null)
                 portraitAnimator.StopTalking();
+            if (animaleseVoice != null)
+                animaleseVoice.Stop();
             DialogueRevealEnded?.Invoke();
 
             if (!string.IsNullOrEmpty(tapAdvanceAction))
@@ -149,13 +174,114 @@ namespace MonsterMaster.UI
             sequence = null;
         }
 
+        private IEnumerator RevealDialogue(string text)
+        {
+            dialogueText.maxVisibleCharacters = text.Length;
+            dialogueText.ForceMeshUpdate();
+            TMP_TextInfo textInfo = dialogueText.textInfo;
+            TMP_MeshInfo[] originalMesh = textInfo.CopyMeshInfoVertexData();
+            bool[] voiced = new bool[text.Length];
+            float elapsed = 0f;
+            float totalDuration = Mathf.Max(0f, (text.Length - 1) * secondsPerCharacter) + characterFadeDuration;
+
+            while (!skipRequested && elapsed < totalDuration)
+            {
+                for (int i = 0; i < textInfo.characterCount; i++)
+                {
+                    TMP_CharacterInfo characterInfo = textInfo.characterInfo[i];
+                    float startTime = i * secondsPerCharacter;
+                    float progress = Mathf.SmoothStep(0f, 1f,
+                        Mathf.Clamp01((elapsed - startTime) / characterFadeDuration));
+
+                    if (!voiced[i] && elapsed >= startTime)
+                    {
+                        voiced[i] = true;
+                        if (animaleseVoice != null)
+                            animaleseVoice.Speak(text[i], i, text.Length);
+                    }
+
+                    if (!characterInfo.isVisible) continue;
+                    int meshIndex = characterInfo.materialReferenceIndex;
+                    int vertexIndex = characterInfo.vertexIndex;
+                    Vector3[] vertices = textInfo.meshInfo[meshIndex].vertices;
+                    Color32[] colors = textInfo.meshInfo[meshIndex].colors32;
+                    Vector3[] originalVertices = originalMesh[meshIndex].vertices;
+                    float offsetY = -characterRiseDistance * (1f - progress);
+                    byte alpha = (byte)Mathf.RoundToInt(255f * progress);
+
+                    for (int vertex = 0; vertex < 4; vertex++)
+                    {
+                        vertices[vertexIndex + vertex] = originalVertices[vertexIndex + vertex]
+                            + new Vector3(0f, offsetY, 0f);
+                        Color32 color = colors[vertexIndex + vertex];
+                        color.a = alpha;
+                        colors[vertexIndex + vertex] = color;
+                    }
+                }
+
+                for (int i = 0; i < textInfo.meshInfo.Length; i++)
+                {
+                    textInfo.meshInfo[i].mesh.vertices = textInfo.meshInfo[i].vertices;
+                    textInfo.meshInfo[i].mesh.colors32 = textInfo.meshInfo[i].colors32;
+                    dialogueText.UpdateGeometry(textInfo.meshInfo[i].mesh, i);
+                }
+
+                elapsed += Time.unscaledDeltaTime;
+                yield return null;
+            }
+        }
+
+        private void ShowCompleteDialogue()
+        {
+            dialogueText.maxVisibleCharacters = dialogueText.text.Length;
+            // Rebuilding restores the original vertices and full opacity after the
+            // per-character flow animation, including when the player skips it.
+            dialogueText.ForceMeshUpdate();
+        }
+
         private void UpdatePortrait(string speaker)
         {
             if (portraitImage == null) return;
 
-            Sprite portrait = showPortrait && speaker == "兔子护士" ? nursePortrait : null;
+            Sprite portrait = null;
+            Vector2 position = new Vector2(0f, -81f);
+            float scale = 1f;
+            if (showPortrait)
+            {
+                int portraitId = speaker == "兔子护士" ? 1 : speaker == "雾雾" ? 2 : 0;
+                for (int i = 0; portraitId > 0 && i < portraitLayouts.Count; i++)
+                {
+                    PortraitLayout layout = portraitLayouts[i];
+                    if (layout == null || layout.id != portraitId) continue;
+                    portrait = layout.portrait;
+                    position = layout.anchoredPosition;
+                    scale = Mathf.Max(0.01f, layout.scale);
+                    break;
+                }
+
+                // Backwards-compatible fallback for prefabs made before the layout tool.
+                if (portrait == null && speaker == "兔子护士") portrait = nursePortrait;
+                else if (portrait == null && speaker == "雾雾") portrait = wuwuPortrait;
+            }
+
+            bool animateNurse = showPortrait && speaker == "兔子护士";
+            if (portraitAnimator != null && portraitAnimator.enabled != animateNurse)
+                portraitAnimator.enabled = animateNurse;
+
             portraitImage.sprite = portrait;
             portraitImage.enabled = portrait != null;
+            portraitImage.preserveAspect = true;
+            if (portrait == null)
+            {
+                portraitImage.gameObject.SetActive(false);
+                return;
+            }
+
+            portraitImage.rectTransform.anchoredPosition = position;
+            portraitImage.rectTransform.localScale = Vector3.one * scale;
+            if (animateNurse && portraitAnimator != null)
+                portraitAnimator.SetIdleAnchoredPosition(position);
+            portraitImage.gameObject.SetActive(true);
         }
 
         private void StartBlink()
@@ -274,8 +400,8 @@ namespace MonsterMaster.UI
         private void Select(string action)
         {
             Debug.Log("Dialogue option selected: " + action);
-            OptionSelected?.Invoke(action);
             Close();
+            OptionSelected?.Invoke(action);
         }
     }
 }
