@@ -14,4 +14,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/UI/ward.unity
     guid: db2769273ce340f8a7de517586e108e9
+  - enabled: 1
+    path: Assets/Scenes/BlockPuzzle/BlockPuzzleTest.unity
+    guid: 58701127729c48b9b6e0b9fd95b4572b
   m_configObjects: {}

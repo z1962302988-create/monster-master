@@ -945,7 +945,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
+  field of view: 91.48301
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
@@ -1503,7 +1503,7 @@ MonoBehaviour:
   headwaveEyesOpen: {fileID: 21300000, guid: 9c4eefe40c5b49ac959087739b37bda9, type: 3}
   headwaveEyesClosed: {fileID: 21300000, guid: df348be60c904aae96fee5908c4f9a60, type: 3}
   headwaveAnchoredPosition: {x: 20, y: 0}
-  headwaveChance: 0.5
+  headwaveChance: 0
   headwaveHoldDuration: 0.4
   previewHeadwave: 0
   minInterval: 2.5
@@ -1991,6 +1991,10 @@ PrefabInstance:
     - target: {fileID: 5517580903066009578, guid: f44554e2c8be547b2930327ba3129381, type: 3}
       propertyPath: buttonPaddingX
       value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 5517580903066009578, guid: f44554e2c8be547b2930327ba3129381, type: 3}
+      propertyPath: showPortrait
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5968441649500342883, guid: f44554e2c8be547b2930327ba3129381, type: 3}
       propertyPath: m_Pivot.x
