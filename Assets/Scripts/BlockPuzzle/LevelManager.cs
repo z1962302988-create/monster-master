@@ -49,6 +49,13 @@ namespace MonsterMaster.BlockPuzzle
             if (remainingTargets == 0) LevelCompleted?.Invoke();
         }
 
+        public void CompleteLevel()
+        {
+            if (remainingTargets == 0) return;
+            remainingTargets = 0;
+            LevelCompleted?.Invoke();
+        }
+
         private void UnlockEligibleBlocks()
         {
             foreach (BlockController block in lockedBlocks)

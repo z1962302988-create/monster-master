@@ -51,6 +51,11 @@ namespace MonsterMaster.BlockPuzzle
 
             localPoint += dragOffset;
             candidatePosition = block.Board.LocalToGrid(localPoint, block.Width, block.Height);
+            Vector2Int dragDelta = candidatePosition - startPosition;
+            if (Mathf.Abs(dragDelta.x) >= Mathf.Abs(dragDelta.y))
+                candidatePosition.y = startPosition.y;
+            else
+                candidatePosition.x = startPosition.x;
             candidateIsValid = block.Board.IsMoveValid(block, startPosition, candidatePosition);
             block.SetValidityVisual(candidateIsValid);
             block.SetLocalPosition(block.Board.GridToLocal(candidatePosition, block.Width, block.Height));

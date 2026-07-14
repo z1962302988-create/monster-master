@@ -7,9 +7,23 @@ using UnityEngine.UI;
 
 namespace MonsterMaster.BlockPuzzle.Editor
 {
+    [InitializeOnLoad]
     public static class BlockPuzzlePopupPrefabBuilder
     {
         private const string PrefabPath = "Assets/Prefabs/UI/BlockPuzzlePopupLayout.prefab";
+
+        static BlockPuzzlePopupPrefabBuilder()
+        {
+            EditorApplication.delayCall += UpgradePrefabIfNeeded;
+        }
+
+        private static void UpgradePrefabIfNeeded()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            BlockPuzzlePopupLayout prefab = AssetDatabase.LoadAssetAtPath<BlockPuzzlePopupLayout>(PrefabPath);
+            if (prefab == null || (prefab.VictoryPopup != null && prefab.SkipButton != null)) return;
+            Build();
+        }
 
         [MenuItem("Tools/Block Puzzle/Rebuild Popup Layout Prefab")]
         public static void Build()
@@ -52,12 +66,31 @@ namespace MonsterMaster.BlockPuzzle.Editor
                 new Vector2(64f, 64f));
             AnchorTopCorner(close.GetComponent<RectTransform>(), false, new Vector2(40f, 40f));
 
+            Button skip = ButtonObject("SkipButton", root.transform, "跳过关卡", font,
+                new Vector2(220f, 76f));
+            AnchorBottomCorner(skip.GetComponent<RectTransform>(), true, new Vector2(40f, 40f));
+
+            GameObject victoryPopup = ImageObject("VictoryPopup", frame.transform,
+                new Color(0f, 0f, 0f, 0.72f), true);
+            Stretch(victoryPopup.GetComponent<RectTransform>());
+            GameObject victoryCard = ImageObject("Card", victoryPopup.transform,
+                new Color(0.10f, 0.15f, 0.23f, 1f), true);
+            victoryCard.GetComponent<RectTransform>().sizeDelta = new Vector2(760f, 480f);
+            TextObject("Message", victoryCard.transform, "关卡完成！", font, 70,
+                new Vector2(0f, 90f), new Vector2(650f, 150f));
+            Button victoryRestart = ButtonObject("PopupRestart", victoryCard.transform, "再来一次", font,
+                new Vector2(360f, 100f));
+            victoryRestart.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -100f);
+
             SerializedObject layout = new SerializedObject(root.GetComponent<BlockPuzzlePopupLayout>());
             layout.FindProperty("popupCanvas").objectReferenceValue = canvas;
             layout.FindProperty("contentRoot").objectReferenceValue = frameRect;
             layout.FindProperty("boardHost").objectReferenceValue = boardHost;
             layout.FindProperty("restartButton").objectReferenceValue = restart;
             layout.FindProperty("closeButton").objectReferenceValue = close;
+            layout.FindProperty("skipButton").objectReferenceValue = skip;
+            layout.FindProperty("victoryPopup").objectReferenceValue = victoryPopup;
+            layout.FindProperty("victoryRestartButton").objectReferenceValue = victoryRestart;
             layout.ApplyModifiedPropertiesWithoutUndo();
 
             PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
@@ -104,6 +137,12 @@ namespace MonsterMaster.BlockPuzzle.Editor
 
         public static void InstallInTestSceneFromCommandLine() { InstallInTestScene(); }
 
+        public static void RebuildAndInstallFromCommandLine()
+        {
+            Build();
+            InstallInTestScene();
+        }
+
         private static GameObject ImageObject(string name, Transform parent, Color color, bool raycast)
         {
             GameObject result = new GameObject(name, typeof(RectTransform), typeof(Image));
@@ -137,6 +176,31 @@ namespace MonsterMaster.BlockPuzzle.Editor
             return button;
         }
 
+        private static Text TextObject(
+            string name,
+            Transform parent,
+            string value,
+            Font font,
+            int fontSize,
+            Vector2 position,
+            Vector2 size)
+        {
+            GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(Text));
+            textObject.layer = 5;
+            textObject.transform.SetParent(parent, false);
+            RectTransform rect = textObject.GetComponent<RectTransform>();
+            rect.sizeDelta = size;
+            rect.anchoredPosition = position;
+            Text text = textObject.GetComponent<Text>();
+            text.font = font;
+            text.text = value;
+            text.fontSize = fontSize;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.color = Color.white;
+            text.raycastTarget = false;
+            return text;
+        }
+
         private static void Stretch(RectTransform rect)
         {
             rect.anchorMin = Vector2.zero;
@@ -152,6 +216,15 @@ namespace MonsterMaster.BlockPuzzle.Editor
             rect.anchorMax = anchor;
             rect.pivot = anchor;
             rect.anchoredPosition = new Vector2(left ? margin.x : -margin.x, -margin.y);
+        }
+
+        private static void AnchorBottomCorner(RectTransform rect, bool left, Vector2 margin)
+        {
+            Vector2 anchor = new Vector2(left ? 0f : 1f, 0f);
+            rect.anchorMin = anchor;
+            rect.anchorMax = anchor;
+            rect.pivot = anchor;
+            rect.anchoredPosition = new Vector2(left ? margin.x : -margin.x, margin.y);
         }
     }
 }

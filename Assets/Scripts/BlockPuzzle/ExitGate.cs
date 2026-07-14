@@ -30,22 +30,22 @@ namespace MonsterMaster.BlockPuzzle
             switch (Data.edge)
             {
                 case BoardEdge.Left:
-                    reachedExit = position.x <= 0;
+                    reachedExit = position.x < 0;
                     blockStart = position.y;
                     blockEnd = position.y + block.Height;
                     break;
                 case BoardEdge.Right:
-                    reachedExit = position.x + block.Width >= columns;
+                    reachedExit = position.x + block.Width > columns;
                     blockStart = position.y;
                     blockEnd = position.y + block.Height;
                     break;
                 case BoardEdge.Bottom:
-                    reachedExit = position.y <= 0;
+                    reachedExit = position.y < 0;
                     blockStart = position.x;
                     blockEnd = position.x + block.Width;
                     break;
                 default:
-                    reachedExit = position.y + block.Height >= rows;
+                    reachedExit = position.y + block.Height > rows;
                     blockStart = position.x;
                     blockEnd = position.x + block.Width;
                     break;

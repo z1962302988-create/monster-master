@@ -64,6 +64,8 @@ namespace MonsterMaster.BlockPuzzle
                 bool sceneTemplate = popupLayoutPrefab.gameObject.scene.IsValid();
                 if (sceneTemplate) popupLayoutPrefab.gameObject.SetActive(false);
                 popupLayout = Instantiate(popupLayoutPrefab, runtimeRoot.transform, false);
+                if (popupLayout.VictoryPopup != null)
+                    popupLayout.VictoryPopup.SetActive(false);
                 popupLayout.gameObject.SetActive(true);
                 canvas = popupLayout.PopupCanvas;
             }
@@ -121,6 +123,8 @@ namespace MonsterMaster.BlockPuzzle
             LevelManager levelManager = runtimeRoot.AddComponent<LevelManager>();
             levelManager.Initialize(level, board);
             levelManager.LevelCompleted += OnLevelCompleted;
+            if (popupLayout != null && popupLayout.SkipButton != null)
+                popupLayout.SkipButton.onClick.AddListener(levelManager.CompleteLevel);
             if (keyCounter != null)
             {
                 levelManager.KeyCountChanged += (count, required) =>
@@ -156,7 +160,17 @@ namespace MonsterMaster.BlockPuzzle
                 pauseOverlay = CreateOverlay(contentRect, "PauseOverlay", "已暂停",
                     new Color(0f, 0f, 0f, 0.55f), false);
             }
-            GameObject victoryPopup = CreateResultPopup(contentRect, "VictoryPopup", "关卡完成！", gameManager);
+            GameObject victoryPopup;
+            if (popupLayout != null && popupLayout.VictoryPopup != null)
+            {
+                victoryPopup = popupLayout.VictoryPopup;
+                if (popupLayout.VictoryRestartButton != null)
+                    popupLayout.VictoryRestartButton.onClick.AddListener(gameManager.Restart);
+            }
+            else
+            {
+                victoryPopup = CreateResultPopup(contentRect, "VictoryPopup", "关卡完成！", gameManager);
+            }
 
             gameManager.Initialize(board, levelManager, pauseButtonText,
                 pauseOverlay, victoryPopup, RequestRestart);

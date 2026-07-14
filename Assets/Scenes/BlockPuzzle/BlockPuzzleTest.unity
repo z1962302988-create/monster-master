@@ -169,12 +169,12 @@ MonoBehaviour:
   level: {fileID: 11400000, guid: c17f355df4dd48f588de0a94af40323d, type: 2}
   blockVisuals:
     boardBackgroundSprite: {fileID: 0}
-    defaultBlockSprite: {fileID: 21300000, guid: d909afcef38f44920b1d4c13adf8af7e, type: 3}
-    defaultHorizontalTwoSprite: {fileID: 21300000, guid: d1368557c158b4adeb13142d016a88d4, type: 3}
-    defaultVerticalTwoSprite: {fileID: 21300000, guid: a760c07117f104a219bf1ff0ba153437, type: 3}
-    defaultLShapeSprite: {fileID: 21300000, guid: 0213a7705e6dc4e239df6b6beb3277de, type: 3}
-    defaultSevenShapeSprite: {fileID: 21300000, guid: 8cf774872272141f8aa513251cf73349, type: 3}
-    obstacleSprite: {fileID: 21300000, guid: deb13a293fbd6463898a35d32119faec, type: 3}
+    defaultBlockSprite: {fileID: 0}
+    defaultHorizontalTwoSprite: {fileID: 0}
+    defaultVerticalTwoSprite: {fileID: 0}
+    defaultLShapeSprite: {fileID: 0}
+    defaultSevenShapeSprite: {fileID: 0}
+    obstacleSprite: {fileID: 0}
     redSprite: {fileID: 0}
     blueSprite: {fileID: 0}
     greenSprite: {fileID: 0}
@@ -336,6 +336,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1182956467287633425, guid: c8756bd46f1fe43a99145bd1d39e1138, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 1182956467287633425, guid: c8756bd46f1fe43a99145bd1d39e1138, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 1182956467287633425, guid: c8756bd46f1fe43a99145bd1d39e1138, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: -90
+      objectReference: {fileID: 0}
     - target: {fileID: 2835057929673980113, guid: c8756bd46f1fe43a99145bd1d39e1138, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 213
