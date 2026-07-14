@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using MonsterMaster.BlockPuzzle;
 using UnityEngine;
@@ -14,6 +15,9 @@ namespace MonsterMaster.UI
         private Button button;
         private BlockPuzzleBootstrap popup;
         private bool loading;
+        private bool completed;
+
+        public event Action PuzzleCompleted;
 
         private void Awake()
         {
@@ -36,7 +40,11 @@ namespace MonsterMaster.UI
         private void OnDestroy()
         {
             if (button != null) button.onClick.RemoveListener(Open);
-            if (popup != null) popup.CloseRequested -= Close;
+            if (popup != null)
+            {
+                popup.CloseRequested -= Close;
+                popup.Completed -= OnPuzzleCompleted;
+            }
         }
 
         private void Update()
@@ -78,7 +86,10 @@ namespace MonsterMaster.UI
             }
 
             if (popup != null)
+            {
                 popup.CloseRequested += Close;
+                popup.Completed += OnPuzzleCompleted;
+            }
             else
                 Debug.LogError("BlockPuzzleTest has no BlockPuzzleBootstrap.", this);
             loading = false;
@@ -88,8 +99,14 @@ namespace MonsterMaster.UI
         {
             if (loading || popup == null) return;
             popup.CloseRequested -= Close;
+            popup.Completed -= OnPuzzleCompleted;
             popup = null;
             StartCoroutine(UnloadPopup());
+        }
+
+        private void OnPuzzleCompleted()
+        {
+            completed = true;
         }
 
         private IEnumerator UnloadPopup()
@@ -98,6 +115,11 @@ namespace MonsterMaster.UI
             AsyncOperation operation = SceneManager.UnloadSceneAsync(puzzleSceneName);
             if (operation != null) yield return operation;
             loading = false;
+            if (completed)
+            {
+                completed = false;
+                PuzzleCompleted?.Invoke();
+            }
         }
     }
 }

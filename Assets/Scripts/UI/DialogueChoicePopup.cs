@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using MonsterMaster.Characters;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -11,13 +12,16 @@ namespace MonsterMaster.UI
     {
         [SerializeField] private TMP_Text speakerNameText;
         [SerializeField] private TMP_Text dialogueText;
+        [SerializeField] private Image portraitImage;
+        [SerializeField] private Sprite nursePortrait;
+        [SerializeField] private bool showPortrait = true;
+        [SerializeField] private SpriteBlink portraitAnimator;
         [SerializeField] private RectTransform optionsPanel;
         [SerializeField] private Button optionButtonTemplate;
         [SerializeField] private Image nextIcon;
         [SerializeField, Min(0.01f)] private float secondsPerCharacter = 0.06f;
         [SerializeField, Min(0.1f)] private float blinkInterval = 2f;
 
-        [SerializeField, Min(1)] private int maxCharsPerLine = 10;
         [SerializeField, Min(0f)] private float buttonPaddingX = 24f;
         [SerializeField, Min(0f)] private float buttonPaddingY = 16f;
 
@@ -26,6 +30,7 @@ namespace MonsterMaster.UI
         private Coroutine blink;
         private bool isRevealing;
         private bool skipRequested;
+        private string tapAdvanceAction;
         private int revealReadyFrame = -1;
         public event Action<string> OptionSelected;
         public event Action DialogueRevealStarted;
@@ -49,23 +54,17 @@ namespace MonsterMaster.UI
                 isRevealing = false;
                 DialogueRevealEnded?.Invoke();
             }
+            if (portraitAnimator != null)
+                portraitAnimator.StopTalking();
             skipRequested = false;
+            tapAdvanceAction = null;
             gameObject.SetActive(false);
         }
 
         public void OnOverlayClick()
         {
-            TrySkipReveal();
-        }
-
-        private void Update()
-        {
-            if (!isRevealing || Time.frameCount <= revealReadyFrame) return;
-            if (Input.GetMouseButtonDown(0) ||
-                (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
-            {
-                TrySkipReveal();
-            }
+            if (isRevealing) TrySkipReveal();
+            else TryAdvance();
         }
 
         private void TrySkipReveal()
@@ -76,9 +75,18 @@ namespace MonsterMaster.UI
             StopBlink();
         }
 
+        private void TryAdvance()
+        {
+            if (isRevealing || string.IsNullOrEmpty(tapAdvanceAction)) return;
+            string action = tapAdvanceAction;
+            tapAdvanceAction = null;
+            Select(action);
+        }
+
         private IEnumerator Play(DialogueConfigTable.Entry entry)
         {
             speakerNameText.text = entry.Speaker;
+            UpdatePortrait(entry.Speaker);
             dialogueText.text = entry.Text;
             dialogueText.maxVisibleCharacters = 0;
             optionsPanel.gameObject.SetActive(false);
@@ -88,6 +96,8 @@ namespace MonsterMaster.UI
             isRevealing = true;
             revealReadyFrame = Time.frameCount;
             StartBlink();
+            if (showPortrait && entry.Speaker == "兔子护士" && portraitAnimator != null)
+                portraitAnimator.StartTalking();
             DialogueRevealStarted?.Invoke();
 
             for (int i = 1; i <= entry.Text.Length; i++)
@@ -107,7 +117,17 @@ namespace MonsterMaster.UI
             isRevealing = false;
             skipRequested = false;
             StopBlink();
+            if (portraitAnimator != null)
+                portraitAnimator.StopTalking();
             DialogueRevealEnded?.Invoke();
+
+            if (!string.IsNullOrEmpty(tapAdvanceAction))
+            {
+                optionsPanel.gameObject.SetActive(false);
+                StartBlink();
+                sequence = null;
+                yield break;
+            }
 
             optionsPanel.gameObject.SetActive(true);
             CanvasGroup group = optionsPanel.GetComponent<CanvasGroup>();
@@ -127,6 +147,15 @@ namespace MonsterMaster.UI
             optionsPanel.anchoredPosition = end;
             group.alpha = 1f;
             sequence = null;
+        }
+
+        private void UpdatePortrait(string speaker)
+        {
+            if (portraitImage == null) return;
+
+            Sprite portrait = showPortrait && speaker == "兔子护士" ? nursePortrait : null;
+            portraitImage.sprite = portrait;
+            portraitImage.enabled = portrait != null;
         }
 
         private void StartBlink()
@@ -171,6 +200,14 @@ namespace MonsterMaster.UI
             foreach (Button button in optionButtons) Destroy(button.gameObject);
             optionButtons.Clear();
             optionButtonTemplate.gameObject.SetActive(false);
+            tapAdvanceAction = null;
+
+            // A single route is not a decision: advance it by tapping anywhere.
+            if (entry.Options.Count == 1)
+            {
+                tapAdvanceAction = entry.Options[0].Action;
+                return;
+            }
 
             // Step 1: create all buttons and collect labels
             var labels = new List<TMP_Text>();
@@ -190,26 +227,19 @@ namespace MonsterMaster.UI
                 optionButtons.Add(button);
             }
 
-            // Step 2: measure max line width (bounded by 10-char width)
+            // Step 2: measure the full width of the longest option.
             TMP_Text templateLabel = optionButtonTemplate.GetComponentInChildren<TMP_Text>();
-            float tenCharWidth = templateLabel.GetPreferredValues(new string('测', maxCharsPerLine)).x;
-
             float maxLineWidth = 0f;
             foreach (TMP_Text label in labels)
             {
-                string text = label.text;
-                for (int i = 0; i < text.Length; i += maxCharsPerLine)
-                {
-                    int len = Mathf.Min(maxCharsPerLine, text.Length - i);
-                    float w = templateLabel.GetPreferredValues(text.Substring(i, len)).x;
-                    if (w > maxLineWidth) maxLineWidth = w;
-                }
+                float width = templateLabel.GetPreferredValues(label.text).x;
+                if (width > maxLineWidth) maxLineWidth = width;
             }
 
-            if (maxLineWidth <= 0f) maxLineWidth = tenCharWidth;
-            if (maxLineWidth > tenCharWidth) maxLineWidth = tenCharWidth;
+            if (maxLineWidth <= 0f)
+                maxLineWidth = templateLabel.GetPreferredValues("继续").x;
 
-            // Step 3: apply uniform sizing — all buttons same width, text wraps at 10 chars
+            // Step 3: keep every option on one line and use a uniform button width.
             foreach (TMP_Text label in labels)
             {
                 // Change label anchor from stretch to centered fixed-width
@@ -220,10 +250,10 @@ namespace MonsterMaster.UI
                 textRect.sizeDelta = new Vector2(maxLineWidth, 0f);
                 textRect.anchoredPosition = Vector2.zero;
 
-                label.enableWordWrapping = true;
+                label.enableWordWrapping = false;
+                label.overflowMode = TextOverflowModes.Overflow;
 
-                // Adjust button height to fit wrapped text
-                Vector2 preferred = label.GetPreferredValues(label.text, maxLineWidth, 0f);
+                Vector2 preferred = label.GetPreferredValues(label.text);
                 LayoutElement layout = label.GetComponentInParent<LayoutElement>();
                 if (layout != null)
                     layout.preferredHeight = preferred.y + buttonPaddingY;

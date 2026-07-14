@@ -22,6 +22,7 @@ namespace MonsterMaster.BlockPuzzle
         public float PopupRotationDegrees => popupRotationDegrees;
         public BlockPuzzlePopupLayout PopupLayout => popupLayoutPrefab;
         public event Action CloseRequested;
+        public event Action Completed;
 
         private void Awake()
         {
@@ -119,6 +120,7 @@ namespace MonsterMaster.BlockPuzzle
 
             LevelManager levelManager = runtimeRoot.AddComponent<LevelManager>();
             levelManager.Initialize(level, board);
+            levelManager.LevelCompleted += OnLevelCompleted;
             if (keyCounter != null)
             {
                 levelManager.KeyCountChanged += (count, required) =>
@@ -180,6 +182,11 @@ namespace MonsterMaster.BlockPuzzle
         {
             Time.timeScale = 1f;
             CloseRequested?.Invoke();
+        }
+
+        private void OnLevelCompleted()
+        {
+            Completed?.Invoke();
         }
 
         private Canvas CreateCanvas()

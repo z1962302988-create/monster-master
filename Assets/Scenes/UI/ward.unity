@@ -294,6 +294,7 @@ GameObject:
   - component: {fileID: 304}
   - component: {fileID: 303}
   - component: {fileID: 302}
+  - component: {fileID: 305}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -385,6 +386,22 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &305
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6b7dc05c02e43c291b28fd930944a1c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  dialoguePrefab: {fileID: 5517580903066009578, guid: f44554e2c8be547b2930327ba3129381, type: 3}
+  rightWallButton: {fileID: 1624441764}
+  namePlateButton: {fileID: 1463149900}
+  puzzleTrigger: {fileID: 1463149901}
 --- !u!1 &400
 GameObject:
   m_ObjectHideFlags: 0
@@ -550,6 +567,7 @@ GameObject:
   - component: {fileID: 1007829098}
   - component: {fileID: 1007829097}
   - component: {fileID: 1007829099}
+  - component: {fileID: 1007829100}
   m_Layer: 5
   m_Name: Door
   m_TagString: Untagged
@@ -658,6 +676,19 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1007829100
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1007829095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f016a8fa0e9f4e72ad58a18117697be2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  mainSceneName: main
 --- !u!1 &1463149896
 GameObject:
   m_ObjectHideFlags: 0
