@@ -17,8 +17,20 @@ namespace MonsterMaster.UI
 
         private void Awake()
         {
+            HideDefaultButtonLabels();
             button = GetComponent<Button>();
             button.onClick.AddListener(Open);
+        }
+
+        private void HideDefaultButtonLabels()
+        {
+            Transform rightView = transform.parent;
+            if (rightView == null) return;
+
+            foreach (Text label in rightView.GetComponentsInChildren<Text>(true))
+            {
+                if (label.text == "Button") label.gameObject.SetActive(false);
+            }
         }
 
         private void OnDestroy()

@@ -83,8 +83,8 @@ namespace MonsterMaster.BlockPuzzle
                 // cells continue to line up with obstacles and occupancy data.
                 image.sprite = shapeSprite;
                 image.type = Image.Type.Simple;
-                image.color = Color.white;
-                RegisterVisual(image, Color.white);
+                image.color = baseColor;
+                RegisterVisual(image, baseColor);
                 BuildShapeHitTargets();
                 return;
             }
@@ -132,11 +132,16 @@ namespace MonsterMaster.BlockPuzzle
                         Mathf.Approximately(Board.VisualCounterRotation, 0f) ? Height : Width)
                     : visualConfig.GetBlockSprite(ColorType);
             }
-            Color normalColor = cellSprite != null ? Color.white : baseColor;
+            // Shape sprites provide texture and alpha; the configured block color
+            // is multiplied on top so a shared normal/shape asset stays distinct.
+            Color normalColor = baseColor;
             cellImage.raycastTarget = true;
             Image styledImage = cellImage;
             if (cellSprite != null)
+            {
                 styledImage = CreateSpriteVisual(cellImage, cellSprite);
+                styledImage.color = normalColor;
+            }
             else
                 cellImage.color = normalColor;
             RegisterVisual(styledImage, normalColor);
@@ -151,16 +156,6 @@ namespace MonsterMaster.BlockPuzzle
             outline.effectDistance = new Vector2(3f, -3f);
             outline.useGraphicAlpha = true;
 
-            GameObject glossObject = new GameObject("Gloss", typeof(RectTransform), typeof(Image));
-            glossObject.transform.SetParent(styledImage.transform, false);
-            RectTransform glossRect = glossObject.GetComponent<RectTransform>();
-            glossRect.anchorMin = new Vector2(0.10f, 0.62f);
-            glossRect.anchorMax = new Vector2(0.90f, 0.88f);
-            glossRect.offsetMin = Vector2.zero;
-            glossRect.offsetMax = Vector2.zero;
-            Image gloss = glossObject.GetComponent<Image>();
-            gloss.color = new Color(1f, 1f, 1f, 0.16f);
-            gloss.raycastTarget = false;
         }
 
         private Image CreateSpriteVisual(Image hitImage, Sprite sprite)

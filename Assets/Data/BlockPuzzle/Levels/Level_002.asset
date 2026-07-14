@@ -1,0 +1,351 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c0ed27476754fc2b9c43cf61841bd70, type: 3}
+  m_Name: Level_002
+  m_EditorClassIdentifier: 
+  columns: 6
+  rows: 8
+  timeLimitSeconds: 210
+  obstacles:
+  - {x: 2, y: 5}
+  - {x: 3, y: 4}
+  - {x: 0, y: 0}
+  - {x: 5, y: 0}
+  - {x: 0, y: 7}
+  blocks:
+  - id: B01
+    color: 5
+    position: {x: 2, y: 7}
+    shape: 0
+    width: 2
+    height: 1
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E5
+  - id: B02
+    color: 4
+    position: {x: 1, y: 6}
+    shape: 0
+    width: 1
+    height: 1
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E2
+  - id: K1
+    color: 4
+    position: {x: 2, y: 5}
+    shape: 3
+    width: 2
+    height: 2
+    isTarget: 1
+    isKey: 1
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E2
+  - id: B03
+    color: 3
+    position: {x: 4, y: 6}
+    shape: 0
+    width: 1
+    height: 1
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E1
+  - id: B04
+    color: 1
+    position: {x: 0, y: 4}
+    shape: 0
+    width: 1
+    height: 2
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E9
+  - id: B05
+    color: 2
+    position: {x: 1, y: 5}
+    shape: 0
+    width: 1
+    height: 1
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E6
+  - id: B06
+    color: 6
+    position: {x: 4, y: 5}
+    shape: 0
+    width: 1
+    height: 1
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E3
+  - id: B07
+    color: 1
+    position: {x: 5, y: 4}
+    shape: 0
+    width: 1
+    height: 2
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E9
+  - id: B08
+    color: 0
+    position: {x: 1, y: 4}
+    shape: 0
+    width: 1
+    height: 1
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E8
+  - id: L1
+    color: 7
+    position: {x: 2, y: 3}
+    shape: 2
+    width: 2
+    height: 2
+    isTarget: 1
+    isKey: 0
+    isLocked: 1
+    requiredKeys: 5
+    allowedExitIds:
+    - E10
+  - id: B09
+    color: 2
+    position: {x: 4, y: 4}
+    shape: 0
+    width: 1
+    height: 1
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E6
+  - id: B10
+    color: 2
+    position: {x: 0, y: 2}
+    shape: 0
+    width: 1
+    height: 2
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E6
+  - id: B11
+    color: 1
+    position: {x: 1, y: 3}
+    shape: 0
+    width: 1
+    height: 1
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E9
+  - id: B12
+    color: 6
+    position: {x: 5, y: 2}
+    shape: 0
+    width: 1
+    height: 2
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E3
+  - id: B13
+    color: 9
+    position: {x: 1, y: 2}
+    shape: 0
+    width: 1
+    height: 1
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E7
+  - id: B14
+    color: 0
+    position: {x: 2, y: 2}
+    shape: 0
+    width: 1
+    height: 1
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E8
+  - id: B15
+    color: 5
+    position: {x: 3, y: 2}
+    shape: 0
+    width: 1
+    height: 1
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E5
+  - id: B16
+    color: 8
+    position: {x: 4, y: 2}
+    shape: 0
+    width: 1
+    height: 1
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E4
+  - id: K2
+    color: 6
+    position: {x: 0, y: 1}
+    shape: 0
+    width: 2
+    height: 1
+    isTarget: 1
+    isKey: 1
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E3
+  - id: B19
+    color: 2
+    position: {x: 2, y: 1}
+    shape: 0
+    width: 2
+    height: 1
+    isTarget: 1
+    isKey: 0
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E6
+  - id: K3
+    color: 4
+    position: {x: 4, y: 1}
+    shape: 0
+    width: 2
+    height: 1
+    isTarget: 1
+    isKey: 1
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E2
+  - id: K4
+    color: 8
+    position: {x: 1, y: 0}
+    shape: 0
+    width: 2
+    height: 1
+    isTarget: 1
+    isKey: 1
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E4
+  - id: K5
+    color: 3
+    position: {x: 3, y: 0}
+    shape: 0
+    width: 2
+    height: 1
+    isTarget: 1
+    isKey: 1
+    isLocked: 0
+    requiredKeys: 1
+    allowedExitIds:
+    - E1
+  exits:
+  - id: E1
+    color: 3
+    edge: 3
+    startIndex: 1
+    span: 2
+  - id: E2
+    color: 4
+    edge: 3
+    startIndex: 3
+    span: 2
+  - id: E3
+    color: 6
+    edge: 0
+    startIndex: 4
+    span: 2
+  - id: E4
+    color: 8
+    edge: 0
+    startIndex: 3
+    span: 1
+  - id: E5
+    color: 5
+    edge: 0
+    startIndex: 1
+    span: 1
+  - id: E6
+    color: 2
+    edge: 1
+    startIndex: 5
+    span: 2
+  - id: E7
+    color: 9
+    edge: 1
+    startIndex: 4
+    span: 1
+  - id: E8
+    color: 0
+    edge: 1
+    startIndex: 1
+    span: 1
+  - id: E9
+    color: 1
+    edge: 2
+    startIndex: 1
+    span: 2
+  - id: E10
+    color: 7
+    edge: 2
+    startIndex: 3
+    span: 2
