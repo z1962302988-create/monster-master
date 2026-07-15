@@ -21,6 +21,7 @@ namespace MonsterMaster.UI
         private AudioSource source;
         private int lineSeed;
         private bool isWuwu;
+        private bool muteLine;
 
         private void Awake()
         {
@@ -36,11 +37,15 @@ namespace MonsterMaster.UI
             Stop();
             lineSeed = StableHash(text + "|" + speaker);
             isWuwu = speaker == "雾雾";
+            muteLine = speaker == "我"
+                || speaker == "玩家"
+                || speaker == "旁白"
+                || speaker == "系统";
         }
 
         public void Speak(char character, int index, int characterCount)
         {
-            if (source == null || char.IsWhiteSpace(character) || char.IsPunctuation(character)) return;
+            if (muteLine || source == null || char.IsWhiteSpace(character) || char.IsPunctuation(character)) return;
 
             int key = StableHash(character.ToString()) ^ (lineSeed & 7) ^ (isWuwu ? 0x40000000 : 0);
             if (!clips.TryGetValue(key, out AudioClip clip))
