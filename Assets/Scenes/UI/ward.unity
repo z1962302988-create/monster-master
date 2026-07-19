@@ -413,6 +413,7 @@ GameObject:
   - component: {fileID: 401}
   - component: {fileID: 403}
   - component: {fileID: 402}
+  - component: {fileID: 404}
   m_Layer: 5
   m_Name: FullView
   m_TagString: Untagged
@@ -478,6 +479,27 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 400}
   m_CullTransparentMesh: 1
+--- !u!114 &404
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0c35d64a15b42cabd1f9859d82ece4b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  lightingShader: {fileID: 4800000, guid: a28cfcb060ef4c0983f2167e40663e1a, type: 3}
+  nightColor: {r: 0.16, g: 0.31, b: 0.42, a: 1}
+  moonColor: {r: 0.54, g: 0.82, b: 1, a: 1}
+  warmColor: {r: 1, g: 0.66, b: 0.28, a: 1}
+  nightAmount: 0.48
+  moonIntensity: 0.44
+  warmIntensity: 0.24
+  shadowStrength: 0.32
+  motionSpeed: 0.07
 --- !u!1 &625999271
 GameObject:
   m_ObjectHideFlags: 0
